@@ -1,2 +1,2 @@
-VIEW_CARGAR_DATOS =  "http://localhost:8000/app1/cargar_datos/"
+VIEW_CARGAR_DATOS =  "http://localhost:8000/cargar_datos/"
 

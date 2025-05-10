@@ -93,6 +93,7 @@ class App(ctk.CTk):
                 )
                 if response.ok :
                     print("✅",response.json())
+                    self.form.destroy()
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -106,7 +107,8 @@ class App(ctk.CTk):
 
         if self.url_excel is None :
             messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos.")
-
+            return
+        
         print("--- solicitar post csv")
         print("--datos: ",self.url_csv)
         
@@ -114,7 +116,7 @@ class App(ctk.CTk):
             files = {'file': f}
             data = {
                 "fuente": "excel",
-  
+                
             }
             try:
                 response = requests.post(
@@ -125,6 +127,7 @@ class App(ctk.CTk):
                 )
                 if response.ok :
                     print("✅",response.json())
+                    self.form.destroy()
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -139,26 +142,31 @@ class App(ctk.CTk):
         
         data = {
             "fuente": "SGBD",
+            "SGBD":kwargs["SGBD"],
             "nombre_tabla": kwargs["nombre_tabla"],
             "usuario_db": kwargs["usuario_db"],
             "password_db": kwargs["password_db"],
-            "bd": kwargs["db"],
+            "db": kwargs["db"],
             "host": kwargs["host"],
             "puerto": kwargs["puerto"],
             "consulta": kwargs["consulta"]
         }
 
+        print("--- Enviando credenciales para que el servidor obtenga la tabla")
+        
 
         try:
             response = requests.post(
                 config.VIEW_CARGAR_DATOS,
                 data=json.dumps(data),
-                headers={'Content-Type': 'application/json'}
+                headers= {'Content-Type': 'application/json'}
             )
             if response.ok:
                 print("✅", response.json())
+                self.form.destroy()
             else:
                 print("❌ Error", response.text)
+                
         except Exception as ex:
             print("❌ Excepción", ex)
 
@@ -197,56 +205,56 @@ class App(ctk.CTk):
         if tipo_bbdd == "-- Ninguna":
             return
         
-        form = ctk.CTkToplevel(self)
+        self.form = ctk.CTkToplevel(self)
         
-        form.title("Obtención de Datos")
+        self.form.title("Obtención de Datos")
         
-        form.transient(self)
-        form.lift()
-        form.focus_force() 
-        form.grab_set() # bloque ventana principal
+        self.form.transient(self)
+        self.form.lift()
+        self.form.focus_force() 
+        self.form.grab_set() # bloque ventana principal
 
         
         if tipo_bbdd == "Archivo Excel":
             
-            lbl_file = ctk.CTkLabel(form,text="Seleccionar Excel")
+            lbl_file = ctk.CTkLabel(self.form,text="Seleccionar Excel")
             lbl_file.grid(row=0,column=0,padx=(50,20),pady=(20,10),sticky="e")
-            txt_file = ctk.CTkEntry(form)
+            txt_file = ctk.CTkEntry(self.form)
             txt_file.grid(row=0,column=1,padx=(0,10),pady=(20,10))
-            btn_file = ctk.CTkButton(form,
+            btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
                                      command=lambda: self.__guardar_url_excel(txt_file))
             btn_file.grid(row=0,column=2,padx=(0,20),pady=(20,10))
-            btn_enviar = ctk.CTkButton(form,
+            btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=self.__solicitud_post_excel)
             btn_enviar.grid(row=1,column=0,columnspan=2,pady=(10,20))
         
         elif tipo_bbdd.strip() == "Archivo CSV":
             
-            form.geometry("370x200")
+            self.form.geometry("370x200")
 
-            lbl_file = ctk.CTkLabel(form,text="CSV")
+            lbl_file = ctk.CTkLabel(self.form,text="CSV")
             lbl_file.grid(row=0,column=0,padx=(50,20),pady=(20,10),sticky="e")
-            txt_file = ctk.CTkEntry(form)
+            txt_file = ctk.CTkEntry(self.form)
             txt_file.configure(state="disabled")
 
             txt_file.grid(row=0,column=1,padx=(0,10),pady=(20,10))
-            btn_file = ctk.CTkButton(form,
+            btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
                                      command=lambda: self.__guardar_url_csv(txt_file))
             btn_file.grid(row=0,column=2,pady=(20,10))
-            lbl_encoding = ctk.CTkLabel(form,text="encoding")
+            lbl_encoding = ctk.CTkLabel(self.form,text="encoding")
             lbl_encoding.grid(row=1,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_encoding = ctk.CTkEntry(form)
+            txt_encoding = ctk.CTkEntry(self.form)
             txt_encoding.grid(row=1,column=1,padx=(0,50),pady=(10,10))
-            lbl_sep = ctk.CTkLabel(form,text="sep")
+            lbl_sep = ctk.CTkLabel(self.form,text="sep")
             lbl_sep.grid(row=2,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_sep = ctk.CTkEntry(form)
+            txt_sep = ctk.CTkEntry(self.form)
             txt_sep.grid(row=2,column=1,padx=(0,50),pady=(10,10))
-            btn_enviar = ctk.CTkButton(form,
+            btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=lambda: self.__solicitud_post_csv(
                                                                                  txt_encoding.get(),
@@ -256,42 +264,42 @@ class App(ctk.CTk):
 
         elif tipo_bbdd in ["MySQL","PostgreSQL","SQLServer"] :  
             
-            lbl_user = ctk.CTkLabel(form,text="Usuario")
+            lbl_user = ctk.CTkLabel(self.form,text="Usuario")
             lbl_user.grid(row=0,column=0,padx=(50,20),pady=(20,10),sticky="e")
-            txt_user = ctk.CTkEntry(form)
+            txt_user = ctk.CTkEntry(self.form)
             txt_user.grid(row=0,column=1,padx=(0,50),pady=(20,10))
 
-            lbl_password = ctk.CTkLabel(form,text="Contraseña")
+            lbl_password = ctk.CTkLabel(self.form,text="Contraseña")
             lbl_password.grid(row=1,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_password = ctk.CTkEntry(form)
+            txt_password = ctk.CTkEntry(self.form)
             txt_password.grid(row=1,column=1,padx=(0,50),pady=(10,10))
 
-            lbl_db = ctk.CTkLabel(form,text="Base de Datos")
+            lbl_db = ctk.CTkLabel(self.form,text="Base de Datos")
             lbl_db.grid(row=2,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_db = ctk.CTkEntry(form)
+            txt_db = ctk.CTkEntry(self.form)
             txt_db.grid(row=2,column=1,padx=(0,50),pady=(10,10))
 
-            lbl_host = ctk.CTkLabel(form,text="Host")
+            lbl_host = ctk.CTkLabel(self.form,text="Host")
             lbl_host.grid(row=3,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_host = ctk.CTkEntry(form)
+            txt_host = ctk.CTkEntry(self.form)
             txt_host.grid(row=3,column=1,padx=(0,50),pady=(10,10))
 
-            lbl_puerto = ctk.CTkLabel(form,text="Puerto")
+            lbl_puerto = ctk.CTkLabel(self.form,text="Puerto")
             lbl_puerto.grid(row=4,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_puerto = ctk.CTkEntry(form)
+            txt_puerto = ctk.CTkEntry(self.form)
             txt_puerto.grid(row=4,column=1,padx=(0,50),pady=(10,10))
 
-            lbl_consulta = ctk.CTkLabel(form,text="Consulta")
+            lbl_consulta = ctk.CTkLabel(self.form,text="Consulta")
             lbl_consulta.grid(row=5,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_consulta = ctk.CTkEntry(form)
+            txt_consulta = ctk.CTkEntry(self.form)
             txt_consulta.grid(row=5,column=1,padx=(0,50),pady=(10,10))
 
-            lbl_nombre_tabla = ctk.CTkLabel(form,text="Nombrar Tabla")
+            lbl_nombre_tabla = ctk.CTkLabel(self.form,text="Nombrar Tabla")
             lbl_nombre_tabla.grid(row=6,column=0,padx=(50,20),pady=(10,10),sticky="e")
-            txt_nombre_tabla = ctk.CTkEntry(form)
+            txt_nombre_tabla = ctk.CTkEntry(self.form)
             txt_nombre_tabla.grid(row=6,column=1,padx=(0,50),pady=(10,10))
 
-            btn_enviar = ctk.CTkButton(form,
+            btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=lambda: self.__solicitud_post_conexion_db(
                                            nombre_tabla = txt_nombre_tabla.get(),
@@ -301,11 +309,12 @@ class App(ctk.CTk):
                                            db=txt_db.get(),
                                            consulta=txt_consulta.get(),
                                           puerto =txt_puerto.get(),
+                                          SGBD = tipo_bbdd
                                        )
                                        )
             
             btn_enviar.grid(row=7,column=0,columnspan=2,pady=(10,20))
-        
+           
 
     def crear_procesar(self):
         header_padre = ctk.CTkFrame(self.tab1,fg_color="#96fba4",corner_radius=20)

@@ -1,12 +1,27 @@
-from App import App
 from login import Login
-import customtkinter as ctk
+from App import App
+import json
+
+def leer_session():
+    try:
+        with open("session.json", "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+    
 
 
 if __name__ == "__main__":
-    ctk.set_appearance_mode("light")
+    token = leer_session()
 
-    # login = Login()
-    # login.mainloop()
-    app = App()
-    app.mainloop()
+    if token:
+        print("Token encontrado. Accediendo directamente...")
+        app = App()
+        app.mainloop()
+    else:
+        login = Login()
+        login.mainloop()
+
+        if login.authenticated:
+            app = App()
+            app.mainloop()

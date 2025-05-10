@@ -1,20 +1,89 @@
 import customtkinter as ctk
+import requests
+import json
+from tkinter import messagebox
 
 class Login(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+        self.authenticated = False
         self.interfaz_login()
+        
 
-    def __send_signin(self):
-        if "datos Correctos":
-            print("Login correcto")
-        pass
+        
+    
+    def __send_signin(self, txt_nombre, txt_password):
+        nombre = txt_nombre.get()
+        password = txt_password.get()
 
-    def __send_signup(self):
-        if "datos Correctos":
-            print("Login correcto")
-        pass
+        data = {
+            "username": nombre,
+            "password": password
+        }
+
+        try:
+            res = requests.post("http://127.0.0.1:8000/api/signin/", json=data)
+
+            if res.status_code == 200:
+                self.authenticated = True
+                token = res.json().get("token")
+                
+                print("Login correcto. Token:", token)
+
+                if self.recordarme_var.get():
+                    # cambiar por bbdd
+                    session_data = {
+                        "token": token,
+                        "username": nombre,
+                    }
+                    with open("session.json", "w") as f:
+                        json.dump(session_data, f)
+
+                self.authenticated = True
+                self.after(100, self.destroy)
+
+            else:
+                self.authenticated = False
+                messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+
+        except Exception as e:
+            messagebox.showerror("Error de red", str(e))
+
+
+    def __send_signup(self,txt_nombre,txt_password,txt_password2):
+        nombre = txt_nombre.get()
+        password1 = txt_password.get()
+        password2 = txt_password2.get()
+
+        data = {
+            "username": nombre,
+            "password1": password1,
+            "password2": password2
+        }
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        try:
+            res = requests.post("http://127.0.0.1:8000/api/signup/", data=json.dumps(data), headers=headers)
+
+            if res.status_code == 201:
+                token = res.json()["token"]
+                print("Registrado con éxito, token:", token)
+                messagebox.showinfo("Éxito", "Usuario creado correctamente.")
+                self.authenticated = True
+                self.after(100, self.destroy)
+
+            else:
+                print("Error:", res.json())
+                messagebox.showerror("Error", res.json().get("error", "Error desconocido."))
+                self.authenticated = False
+        except Exception as e:
+            print("Error", e)
+            messagebox.showerror("Error de red", str(e))
+
 
     def __frame_signup(self):
         for widget in self.frame_incio.winfo_children():
@@ -52,7 +121,11 @@ class Login(ctk.CTk):
 
         btn_signup = ctk.CTkButton(self.frame_incio,
                                          text="SIGNUP",
-                                         command=self.__send_signup,
+                                         command=lambda:self.__send_signup(
+                                             txt_nombre, 
+                                             txt_password, 
+                                             txt_password2
+                                         ),
                                          font=("Arial",20,"bold"),
                                          )
         btn_signup.grid(row=4,column=0,columnspan=3,pady=(0,20))
@@ -105,7 +178,10 @@ class Login(ctk.CTk):
 
         btn_signin = ctk.CTkButton(self.frame_incio,
                                          text="SIGNIN",
-                                         command=self.__send_signin,
+                                         command=lambda: self.__send_signin(
+                                             txt_nombre,
+                                             txt_password
+                                         ),
                                          font=("Arial",20,"bold"),
                                          )
         btn_signin.grid(row=3,column=0,columnspan=3,pady=(0,20))
@@ -115,7 +191,18 @@ class Login(ctk.CTk):
                                         command=self.__frame_signup
                                         )
         btn_signup.grid(row=4,column=0,columnspan=3)
+
+
+        self.recordarme_var = ctk.BooleanVar()
+
+        check_recordarme = ctk.CTkCheckBox(
+            self.frame_incio,
+            text="Recordarme",
+            variable=self.recordarme_var
+        )
+        check_recordarme.grid(row=5, column=1, sticky="w")
     
+
     def interfaz_login(self):
         self.geometry("400x500")
         self.title("Inicia Sesión")
