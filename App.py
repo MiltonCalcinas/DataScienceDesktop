@@ -14,14 +14,12 @@ from PIL import Image
 class App(ctk.CTk):
 
     def __init__(self, fg_color = None, **kwargs):
-        super().__init__(fg_color, **kwargs)
-
+        super().__init__(fg_color, **kwargs)        
         self.url_csv = None
         self.url_csv = None
-        
-
-
         self.crear_interfaz()
+
+
 
     def crear_interfaz(self):
         self.title("Crear Pestañaas")
@@ -84,16 +82,23 @@ class App(ctk.CTk):
                 "sep" : sep,
                 
             }
+
+            
             try:
                 response = requests.post(
                     config.VIEW_CARGAR_DATOS,
                     data= data,
-                    files=files
-
+                    files=files,
+                    
                 )
                 if response.ok :
                     print("✅",response.json())
+                   
+                    print("--- mostrando tabla csv")
+                    df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
+                    self.mostrar_datos_en_tabla(df)
                     self.form.destroy()
+                    df.info()
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -103,20 +108,21 @@ class App(ctk.CTk):
         
 
 
-    def __solicitud_post_excel(self):
-
-        if self.url_excel is None :
-            messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos.")
+    def __solicitud_post_excel(self,txt_sheet_name):
+        sheet_name = txt_sheet_name.get()
+        if self.url_excel is None or sheet_name=="" :
+            messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos y establece la Hoja.")
             return
         
-        print("--- solicitar post csv")
-        print("--datos: ",self.url_csv)
-        
+        print("--- solicitar post excel")
+        print("--datos: ",self.url_excel)
+        print("Nombre hoja:",sheet_name)
+
         with open(self.url_excel,"rb") as f:
             files = {'file': f}
             data = {
                 "fuente": "excel",
-                
+                "sheet_name":sheet_name,
             }
             try:
                 response = requests.post(
@@ -128,6 +134,10 @@ class App(ctk.CTk):
                 if response.ok :
                     print("✅",response.json())
                     self.form.destroy()
+                    print("--- mostrando datos en tabla")
+                    df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
+                    self.mostrar_datos_en_tabla(df)
+                    df.info()
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -162,8 +172,10 @@ class App(ctk.CTk):
                 headers= {'Content-Type': 'application/json'}
             )
             if response.ok:
-                print("✅", response.json())
                 self.form.destroy()
+                df = pd.DataFrame(response.json()) 
+                print("✅", df.info())
+                self.mostrar_datos_en_tabla(df)               
             else:
                 print("❌ Error", response.text)
                 
@@ -197,7 +209,29 @@ class App(ctk.CTk):
             txt_file.insert(0,archivo)
             txt_file.configure(state="disabled")
 
+    def ___solicitud_filtrar(self,event):
+        filtro = self.txt_filtro.get()
+        if filtro =="":
+            print("-- Filtro vacio")
+            return
         
+        data = {"filtro":filtro}
+        try:
+            response = requests.post(
+                config.VIEW_FILTRAR,
+                data=json.dumps(data),
+                headers=  {'Content-Type': 'application/json'}
+            )
+            if response.ok:
+                print("Datos filtrados correctamente")
+                df = pd.DataFrame(response.json())
+                self.mostrar_datos_en_tabla(df)
+                print(df.head())
+            else:
+                print("error al filtrar:",response.text)
+                
+        except Exception as ex:
+            print("Error en POST (filtrar)", ex)
 
     def __ventana_conexion(self,tipo_bbdd):
         print("--- La fuente de datos seleccionada es :",tipo_bbdd)
@@ -214,7 +248,7 @@ class App(ctk.CTk):
         self.form.focus_force() 
         self.form.grab_set() # bloque ventana principal
 
-        
+    
         if tipo_bbdd == "Archivo Excel":
             
             lbl_file = ctk.CTkLabel(self.form,text="Seleccionar Excel")
@@ -226,10 +260,17 @@ class App(ctk.CTk):
                                      width=20,
                                      command=lambda: self.__guardar_url_excel(txt_file))
             btn_file.grid(row=0,column=2,padx=(0,20),pady=(20,10))
+
+            lbl_sheet_name = ctk.CTkLabel(self.form,text="Hoja")
+            lbl_sheet_name.grid(row=1,column=0,padx=(50,20),pady=(10,20))
+
+            txt_sheet_name = ctk.CTkEntry(self.form)
+            txt_sheet_name.grid(row=1,column=1,padx=(0,10),pady=(10,20))
+
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=self.__solicitud_post_excel)
-            btn_enviar.grid(row=1,column=0,columnspan=2,pady=(10,20))
+                                       command=lambda:self.__solicitud_post_excel(txt_sheet_name))
+            btn_enviar.grid(row=2,column=0,columnspan=2,pady=(10,20))
         
         elif tipo_bbdd.strip() == "Archivo CSV":
             
@@ -389,8 +430,10 @@ class App(ctk.CTk):
 
         # FILA 2: FILTRO , CONVERTIR TIPO, A.N.S., CALCULAR ESTÁDISTICAS,  APLICAR (CAMBIOS)
 
-        txt_filtro = ctk.CTkEntry(header_hijo,placeholder_text="Filtro:")
-        txt_filtro.grid(row=1,column=0,padx=(10,5),sticky="nsew")
+        self.txt_filtro = ctk.CTkEntry(header_hijo,placeholder_text="Filtro:")
+        self.txt_filtro.grid(row=1,column=0,padx=(10,5),sticky="nsew")
+        self.txt_filtro.bind("<Return>",self.___solicitud_filtrar)
+
         cbo_convertir_tipo = ctk.CTkComboBox(header_hijo,
                                       values=[
                                           "Texto a Número (int)",
@@ -439,19 +482,31 @@ class App(ctk.CTk):
 
         
         """ ------------obteniendo los datos---------------"""
-        df = pd.read_csv("datos.csv",sep=",")
+        
 
-        tree = ttk.Treeview(frame_tabla,xscrollcommand=scroll_x.set ,columns=tuple(df.columns), show="headings")
-        scroll_x.config(command=tree.xview)
-
+        self.tree = ttk.Treeview(frame_tabla,
+                            xscrollcommand=scroll_x.set ,
+                           
+                            show="headings")
+        
+        scroll_x.config(command=self.tree.xview)
+        self.tree.pack(padx=20, pady=20, fill="both", expand=True)
+    
+    def mostrar_datos_en_tabla(self,df):
+        self.tree["columns"] = list(df.columns)
+        
+        # encambezado (cols)
         for col in df.columns:
-            tree.heading(col,text=col.capitalize())
-
-        tree.pack(padx=20, pady=20, fill="both", expand=True)
-
-        # Insertar datos
-        for vector in df.values:
-            tree.insert("","end",values=tuple(vector))
+            self.tree.heading(col,text=col.capitalize())
+            self.tree.column(col, anchor="center")
+        
+        #limpiar filas
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        
+        # Insertar datos (50 primeras filas)
+        for vector in df.values[:50]:
+            self.tree.insert("","end",values=tuple(vector))
 
 
     def crear_entrenamiento(self):

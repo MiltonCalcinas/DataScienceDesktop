@@ -2,6 +2,7 @@ from login import Login
 from App import App
 import json
 
+
 def leer_session():
     try:
         with open("session.json", "r") as f:
@@ -25,3 +26,5 @@ if __name__ == "__main__":
         if login.authenticated:
             app = App()
             app.mainloop()
+
+

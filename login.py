@@ -27,18 +27,20 @@ class Login(ctk.CTk):
 
             if res.status_code == 200:
                 self.authenticated = True
-                token = res.json().get("token")
-                
-                print("Login correcto. Token:", token)
 
-                if self.recordarme_var.get():
-                    # cambiar por bbdd
-                    session_data = {
-                        "token": token,
-                        "username": nombre,
-                    }
-                    with open("session.json", "w") as f:
-                        json.dump(session_data, f)
+                auth_token= res.json()["token"]
+                print("Logeado con éxito, token:", auth_token)
+                
+                csrf_token = res.cookies.get('csrftoken')
+                print("Tocken csrf:",csrf_token)
+
+                session_data = {
+                    "auth_token": auth_token,
+                    "csrf_token":csrf_token,
+                    "username": nombre,
+                }
+                with open("session.json", "w") as f:
+                    json.dump(session_data, f)
 
                 self.authenticated = True
                 self.after(100, self.destroy)
@@ -63,6 +65,7 @@ class Login(ctk.CTk):
         }
 
         headers = {
+             
             "Content-Type": "application/json"
         }
 
@@ -70,8 +73,20 @@ class Login(ctk.CTk):
             res = requests.post("http://127.0.0.1:8000/api/signup/", data=json.dumps(data), headers=headers)
 
             if res.status_code == 201:
-                token = res.json()["token"]
-                print("Registrado con éxito, token:", token)
+                auth_token= res.json()["token"]
+                print("Registrado con éxito, token:", auth_token)
+                csrf_token = res.cookies.get('csrftoken')
+                print("Tocken csrf:",csrf_token)
+
+                session_data = {
+                    "auth_token": auth_token,
+                    "csrf_token":csrf_token,
+                    "username": nombre,
+                }
+                with open("session.json", "w") as f:
+                                    json.dump(session_data, f)
+
+
                 messagebox.showinfo("Éxito", "Usuario creado correctamente.")
                 self.authenticated = True
                 self.after(100, self.destroy)
