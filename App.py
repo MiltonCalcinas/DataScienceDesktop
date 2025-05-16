@@ -17,6 +17,8 @@ class App(ctk.CTk):
         super().__init__(fg_color, **kwargs)        
         self.url_csv = None
         self.url_csv = None
+        self.df = None
+        self.result_statistics = []
         self.crear_interfaz()
 
 
@@ -65,11 +67,363 @@ class App(ctk.CTk):
         self.tab2 = self.notebook.add("Entrenamiento")
         self.tab3 = self.notebook.add("Dashboard")
 
+    def __convert_data_type(self):
+        values=[
+            "Texto a Número (int)",
+            "Texto a Número (float)",
+            "Texto a Fecha (datatime)",
+            "Texto a Categoría",
+            "Número a Texto",
+            "Fecha a Texto",
+        ]
+        self.pop_conversion = ctk.CTkToplevel(self)
+        self.pop_conversion.title("Conversion")
+        self.pop_conversion.transient(self)
+        self.pop_conversion.lift()
+        self.pop_conversion.focus_force()
+        self.pop_conversion.grab_set()
+
+        
+        cbo_statistics = ctk.CTkComboBox(self.pop_conversion,
+                                         values=values
+                                         )
+        cbo_statistics.grid(row=1,column=0,padx=(20,20),pady=(20,20))
+        
+        
+        variable_conversion = ctk.CTkComboBox(
+            self.pop_conversion,
+            values = list(self.df.columns))
+        variable_conversion.grid(row=1,column=1,padx=(0,20),pady=(20,20))
+        
+        self.btn_add_variables = ctk.CTkButton(self.pop_conversion,
+                                          text="+",
+                                          width=50,
+                                          command=lambda:self.add_variable_conversion(values)
+                                          )
+        self.btn_add_variables.grid(row=2,column=0,padx=20)
+
+        self.btn_conversion = ctk.CTkButton(self.pop_conversion,
+                                  text="Convertir Tipo",
+                                  command=self.__conversion
+                                  )
+        self.btn_conversion.grid(row=3,column=1,padx=(0,20),pady=(0,20))
+
+    def add_variable_conversion(self,values):
+        fila = self.btn_add_variables.grid_info()["row"] 
+        ctk.CTkComboBox(self.pop_conversion,
+                        values=values
+                        ).grid(row=fila,column=0,padx=(20,20),pady=(0,20))
+        ctk.CTkComboBox(self.pop_conversion,
+                        values=list(self.df.columns)
+                        ).grid(row=fila,column=1,pady=(0,20,),padx=(0,20))
+        
+        self.btn_add_variables.grid_configure(row=fila+1)
+        self.btn_conversion.grid_configure(row=fila+2)
+        geo = self.pop_conversion.geometry()
+        ancho_alto, x_y =geo.split('+', 1)
+        ancho, alto = map(int, ancho_alto.split('x'))
+        x, y = map(int, x_y.split('+'))
+        nuevo_alto = alto + 50
+        self.pop_conversion.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
+    def __conversion(self):
+        pass
+
+
+    def __calculate_statistics(self):
+        values=[
+                "media",
+                "mediana",
+                "desviacion_estandar",
+                "varianza",
+                "minimo",
+                "maximo"
+                ]
+        self.popup_statistics = ctk.CTkToplevel(self)
+        self.popup_statistics.title("Estadísticas")
+        self.popup_statistics.transient(self)
+        self.popup_statistics.lift()
+        self.popup_statistics.focus_force()
+        self.popup_statistics.grab_set()
+
+        
+        self.statistics_combos = []  # ← Aquí guardaremos los ComboBox
+
+        # Añadir el primer par de ComboBox con referencias
+        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values)
+        cbo_stat.grid(row=1, column=0, padx=(20, 20), pady=(20, 20))
+
+        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns))
+        cbo_var.grid(row=1, column=1, padx=(0, 20), pady=(20, 20))
+
+        self.statistics_combos.append((cbo_stat, cbo_var))
+        
+        self.btn_add_variables = ctk.CTkButton(self.popup_statistics,
+                                          text="+",
+                                          width=50,
+                                          command=lambda:self.add_variable_statistics(values))
+        self.btn_add_variables.grid(row=2,column=0,padx=20)
+
+        self.btn_statistics = ctk.CTkButton(self.popup_statistics,
+                                  text="Calcular",
+                                  command=self.__statistics)
+        self.btn_statistics.grid(row=3,column=1,padx=(0,20),pady=(0,20))
+
+    def add_variable_statistics(self, values):
+        fila = self.btn_add_variables.grid_info()["row"]
+        
+        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values)
+        cbo_stat.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
+
+        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns))
+        cbo_var.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
+
+        self.statistics_combos.append((cbo_stat, cbo_var))  # ← Guardamos los nuevos ComboBox
+
+        self.btn_add_variables.grid_configure(row=fila + 1)
+        self.btn_statistics.grid_configure(row=fila + 2)
+
+        geo = self.popup_statistics.geometry()
+        ancho_alto, x_y = geo.split('+', 1)
+        ancho, alto = map(int, ancho_alto.split('x'))
+        x, y = map(int, x_y.split('+'))
+        nuevo_alto = alto + 50
+        self.popup_statistics.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
+
+    def __statistics(self):
+
+        statistics = {
+            "media": np.mean,
+            "mediana": np.median,
+            "desviacion_estandar": np.std,
+            "varianza": np.var,
+            "minimo": np.min,
+            "maximo": np.max
+        }
+
+        resultados = []
+        #self.result_statistics.clear()  # Limpia resultados anteriores
+
+        for cbo_stat, cbo_var in self.statistics_combos:
+            stat_name = cbo_stat.get()
+            var_name = cbo_var.get()
+
+            if stat_name and var_name:
+                try:
+                    funcion = statistics[stat_name]
+                    valor = funcion(self.df[var_name])
+                    resultado = {
+                        "variable": var_name,
+                        "estadistica": stat_name,
+                        "valor": float(valor)
+                    }
+                    self.result_statistics.append(resultado)
+                    resultados.append(f"{stat_name.title()} de '{var_name}': {valor:.4f}")
+
+                except Exception as e:
+                    resultados.append(f"Error con '{var_name}': {str(e)}")
+                
+                    
+
+        # Mostrar resultados en un nuevo popup
+        self.__show_result_popup(resultados)
+
+    def __show_result_popup(self, resultados):
+        self.popup_statistics.destroy()
+        popup_resultados = ctk.CTkToplevel(self)
+        popup_resultados.title("Resultados de Estadísticas")
+        popup_resultados.geometry("400x300")
+        popup_resultados.transient(self)
+        popup_resultados.lift()
+        popup_resultados.focus_force()
+        
+
+        txt_resultados = ctk.CTkTextbox(popup_resultados, wrap="word")
+        txt_resultados.pack(expand=True, fill="both", padx=20, pady=20)
+
+        texto = "\n".join(resultados)
+        txt_resultados.insert("1.0", texto)
+        txt_resultados.configure(state="disabled")
+
+
+    def mostrar_historial_estadisticas(self):
+        if not self.result_statistics:
+            messagebox.showinfo("Historial", "No hay estadísticas calculadas todavía.")
+            return
+
+        popup = ctk.CTkToplevel(self)
+        popup.title("Historial de Estadísticas")
+        popup.geometry("400x300")
+
+        texto = "\n".join(
+            f"{r['estadistica'].title()} de '{r['variable']}': {r['valor']:.4f}"
+            for r in self.result_statistics
+        )
+
+        text_widget = ctk.CTkTextbox(popup, wrap="word")
+        text_widget.insert("1.0", texto)
+        text_widget.configure(state="disabled")
+        text_widget.pack(expand=True, fill="both", padx=20, pady=20)
+
+
+    def __generate_graph(self):
+        if self.df is None:
+            print("Todavía no se han Cargado Datos")
+            messagebox.showerror("Error","No se han cargado los datos")
+            return
+        
+        self.popup_generate_graph = ctk.CTkToplevel(self)
+        # self.popup_generate_graph.geometry("400+400")
+        self.popup_generate_graph.transient(self)
+        self.popup_generate_graph.lift()
+        self.popup_generate_graph.focus_force() 
+        self.popup_generate_graph.grab_set() # bloque ventana principal
+        values = [
+                    "Bar",
+                    "Pie",
+                    "Line",
+                    "Area",
+                    "Box",
+                    "Box by Category"
+                    ]
+        cbo_type_graph = ctk.CTkComboBox(self.popup_generate_graph,
+                                            values=values
+        )
+        cbo_type_graph.grid(row=1,column=0,padx=(20,20),pady=(20,20))
+        
+        cbo_variables = ctk.CTkComboBox(self.popup_generate_graph,
+                                        values=list(self.df.columns))
+        cbo_variables.grid(row=1,column=1,pady=(20,20),padx=(0,20))
+
+        self.btn_add_variables = ctk.CTkButton(self.popup_generate_graph,
+                                          text="+",
+                                          width=50,
+                                          command=lambda:self.add_variable(values))
+        self.btn_add_variables.grid(row=2,column=0,padx=20)
+
+        self.btn_graph = ctk.CTkButton(self.popup_generate_graph,
+                                  text="Graficar",
+                                  command=self.__graph)
+        self.btn_graph.grid(row=3,column=1,padx=(20,20),pady=(0,20))
+
+    def add_variable(self,values):
+        fila = self.btn_add_variables.grid_info()["row"] 
+        ctk.CTkComboBox(self.popup_generate_graph,
+                        values=values
+                        ).grid(row=fila,column=0,padx=(20,20),pady=(0,20))
+        ctk.CTkComboBox(self.popup_generate_graph,
+                        values=list(self.df.columns)
+                        ).grid(row=fila,column=1,pady=(0,20,),padx=(0,20))
+        
+        self.btn_add_variables.grid_configure(row=fila+1)
+        self.btn_graph.grid_configure(row=fila+2)
+        geo = self.popup_generate_graph.geometry()
+        ancho_alto, x_y =geo.split('+', 1)
+        ancho, alto = map(int, ancho_alto.split('x'))
+        x, y = map(int, x_y.split('+'))
+        nuevo_alto = alto + 50
+        self.popup_generate_graph.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
+
+    def __graph(self):
+        messagebox.showinfo("Incompleto","Falta implementar def __graph()")
+        pass        
+
+
+
+    def __select_columns(self):
+        popup_choose_columns = ctk.CTkToplevel(self)
+        popup_choose_columns.title("Elige las columnas")
+
+        popup_choose_columns.transient(self)
+        popup_choose_columns.lift()
+        popup_choose_columns.focus_force()
+        popup_choose_columns.grab_set()
+
+
+        group_check = {}
+        for i,col in enumerate(self.df.columns):
+            var = ctk.BooleanVar()
+            chk = ctk.CTkCheckBox(
+                                popup_choose_columns,
+                                text=col,
+                                variable=var
+                                )
+            chk.pack(anchor="w",pady=5,padx=20)
+            group_check[col] = var
+
+        print("Group checkbox de Transformar variables",group_check)
+        btn_choose_columns= ctk.CTkButton(popup_choose_columns,
+                                        text="Seleccionar",
+                                        command=lambda:self.__save_columns(group_check))
+        btn_choose_columns.pack(anchor="w",pady=5,padx=20)
+
+    def __save_columns(self,group_check):
+        cols =  [ col for col,var in group_check.items() if var.get()]
+        self.df = self.df[cols]
+        self.show_tree_viewport()
+        
+
+
+    def __transform_variables(self,function):
+        print("--evento click Transformar Variable :",function)
+        math_functions = {
+                'ln': np.log,
+                'log10':np.log10,
+                'sqrt':np.sqrt,
+                'exp': np.exp,
+                'square':np.square,
+                'abs':np.abs,
+            }
+        
+        if math_functions.get(function,None) is None:
+            return
+        else:
+
+            popup_choose_columns = ctk.CTkToplevel(self)
+            popup_choose_columns.title("Elige las columnas")
+            popup_choose_columns.focus()
+            popup_choose_columns.lift()
+            popup_choose_columns.geometry("400x500")
+
+            group_check = {}
+            columns_number = self.df.select_dtypes(include='number').columns
+            for i,col in enumerate(columns_number):
+                var = ctk.BooleanVar()
+                chk = ctk.CTkCheckBox(
+                                    popup_choose_columns,
+                                    text=col,
+                                    variable=var
+                                    )
+                chk.pack(anchor="w",pady=5,padx=20)
+                group_check[col] = var
+
+            print("Group checkbox de Transformar variables",group_check)
+            btn_choose_columns= ctk.CTkButton(popup_choose_columns,
+                                            text="Seleccionar",
+                                            command=lambda:self.__transfrom(group_check,
+                                                                               function,
+                                                                               math_functions,
+                                                                               popup_choose_columns))
+            btn_choose_columns.pack(anchor="w",pady=5,padx=20)
+
+                    
+    def __transfrom(self,group_check,function,math_functions,popup_choose_columns):
+        try:
+            print("-- on click columnas elegidas:")
+            cols =  [ col for col,var in group_check.items() if var.get()]   
+            cols_func = [f"{function}_{col}" for col in cols]
+            print(cols)
+            self.df[cols_func]= math_functions[function](self.df[cols])
+            self.show_tree_viewport()
+            popup_choose_columns.destroy()
+
+        except Exception as ex:
+            messagebox.showerror("Campos Invalidos para la Transformación", ex)
+
 
     def __solicitud_post_csv(self,encoding,sep):
         
         if self.url_csv is None or encoding == "" or sep == "":
-            messagebox.showwarning("Campos requeridos", "Por favor, completa todos los campos obligatorios.")
+            messagebox.showerror("Campos Invalidos para la Transformación", "Por favor, completa todos los campos obligatorios.")
             return
         
         print("--- solicitar post csv")
@@ -95,10 +449,11 @@ class App(ctk.CTk):
                     print("✅",response.json())
                    
                     print("--- mostrando tabla csv")
-                    df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
-                    self.mostrar_datos_en_tabla(df)
+                    self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
+                    self.show_tree_viewport()
                     self.form.destroy()
-                    df.info()
+                    
+
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -106,7 +461,6 @@ class App(ctk.CTk):
 
 
         
-
 
     def __solicitud_post_excel(self,txt_sheet_name):
         sheet_name = txt_sheet_name.get()
@@ -135,9 +489,10 @@ class App(ctk.CTk):
                     print("✅",response.json())
                     self.form.destroy()
                     print("--- mostrando datos en tabla")
-                    df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
-                    self.mostrar_datos_en_tabla(df)
-                    df.info()
+                    self.df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
+                    self.show_tree_viewport()
+                    
+
                 else:
                     print("❌ Error",response.text)
             except Exception as ex:
@@ -173,9 +528,10 @@ class App(ctk.CTk):
             )
             if response.ok:
                 self.form.destroy()
-                df = pd.DataFrame(response.json()) 
-                print("✅", df.info())
-                self.mostrar_datos_en_tabla(df)               
+                self.df = pd.DataFrame(response.json()) 
+                print("✅")
+                
+                self.show_tree_viewport()    
             else:
                 print("❌ Error", response.text)
                 
@@ -210,28 +566,28 @@ class App(ctk.CTk):
             txt_file.configure(state="disabled")
 
     def ___solicitud_filtrar(self,event):
-        filtro = self.txt_filtro.get()
-        if filtro =="":
-            print("-- Filtro vacio")
-            return
         
-        data = {"filtro":filtro}
-        try:
-            response = requests.post(
-                config.VIEW_FILTRAR,
-                data=json.dumps(data),
-                headers=  {'Content-Type': 'application/json'}
-            )
-            if response.ok:
-                print("Datos filtrados correctamente")
-                df = pd.DataFrame(response.json())
-                self.mostrar_datos_en_tabla(df)
-                print(df.head())
-            else:
-                print("error al filtrar:",response.text)
-                
-        except Exception as ex:
-            print("Error en POST (filtrar)", ex)
+        filtro = self.txt_filtro.get()
+        if filtro == "":
+            return
+        df_filtrado = self.df.query(filtro)
+
+        # tree 
+        self.tree["columns"] = list(df_filtrado.columns)
+        
+        # encambezado (cols)
+        for col in df_filtrado.columns:
+            self.tree.heading(col,text=col.capitalize())
+            self.tree.column(col, anchor="center")
+        
+        #limpiar filas
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        
+        # Insertar datos (50 primeras filas)
+        for vector in df_filtrado.values[:50]:
+            self.tree.insert("","end",values=tuple(vector))
+
 
     def __ventana_conexion(self,tipo_bbdd):
         print("--- La fuente de datos seleccionada es :",tipo_bbdd)
@@ -281,7 +637,7 @@ class App(ctk.CTk):
             txt_file = ctk.CTkEntry(self.form)
             txt_file.configure(state="disabled")
 
-            txt_file.grid(row=0,column=1,padx=(0,10),pady=(20,10))
+            txt_file.grid(row=0,column=1,padx=(0,50),pady=(20,10))
             btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
@@ -301,7 +657,7 @@ class App(ctk.CTk):
                                                                                  txt_encoding.get(),
                                                                                  txt_sep.get()))
             
-            btn_enviar.grid(row=3,column=0,pady=(10,20),columnspan=2)
+            btn_enviar.grid(row=3,column=1,pady=(10,10),padx=(0,50))
 
         elif tipo_bbdd in ["MySQL","PostgreSQL","SQLServer"] :  
             
@@ -355,7 +711,7 @@ class App(ctk.CTk):
                                        )
             
             btn_enviar.grid(row=7,column=0,columnspan=2,pady=(10,20))
-           
+        
 
     def crear_procesar(self):
         header_padre = ctk.CTkFrame(self.tab1,fg_color="#96fba4",corner_radius=20)
@@ -378,17 +734,14 @@ class App(ctk.CTk):
         cbo_cargar_datos.set("Fuente de Datos")
         cbo_cargar_datos.grid(row=0,column=0,padx=(10,5),sticky="nsew",pady=(0,10))
 
-        cbo_elegir_columnas = ctk.CTkComboBox(header_hijo,
-                                      values=[
-                                          "Columna1",
-                                          "Columna2",
-                                          "Columna3",
-                                          "-- Ninguna"
-                                           ])
-        cbo_elegir_columnas.grid(row=0,column=1,padx=(5,5),sticky="nsew",pady=(0,10))
-        cbo_elegir_columnas.set("Elegir Columnas")
+        self.btn_elegir_columnas = ctk.CTkButton(header_hijo,
+                                                 text="Elegir Columnas",
+                                                 command=self.__select_columns
+                                                 )
+        self.btn_elegir_columnas.grid(row=0,column=1,padx=(5,5),sticky="nsew",pady=(0,10))
+        
 
-        cbo_transformar_variables = ctk.CTkComboBox(header_hijo,
+        cbo_transform_variables = ctk.CTkComboBox(header_hijo,
                                       values=[
                                           "ln",
                                           "log10",
@@ -397,32 +750,26 @@ class App(ctk.CTk):
                                           "square",
                                           "abs",
                                           "-- Ninguna"
-                                           ])
-        cbo_transformar_variables.grid(row=0,column=2,padx=(5,5),sticky="nsew",pady=(0,10))
-        cbo_transformar_variables.set("Transformar Variables")
+                                           ],
+                                           command= self.__transform_variables)
+        cbo_transform_variables.grid(row=0,column=2,padx=(5,5),sticky="nsew",pady=(0,10))
+        cbo_transform_variables.set("Transformar Variables")
 
-        cbo_generar_graficos = ctk.CTkComboBox(header_hijo,
-                                      values=[
-                                          "Bar",
-                                          "Pie",
-                                          "Line",
-                                          "Area",
-                                          "Box",
-                                          "Box by Category",
-                                               "-- Ninguna"
-                                           ])
-        cbo_generar_graficos.grid(row=0,column=3,padx=(5,5),sticky="nsew",pady=(0,10))
-        cbo_generar_graficos.set("Generar Gráficos")
+        btn_generate_graph = ctk.CTkButton(header_hijo,
+                                           text="Generar Gráfico",
+                                           command=self.__generate_graph)
+        btn_generate_graph.grid(row=0,column=3,padx=(5,5),sticky="nsew",pady=(0,10))
+        
 
-        cbo_variable_dependiente = ctk.CTkComboBox(header_hijo,
+        self.cbo_variable_dependiente = ctk.CTkComboBox(header_hijo,
                                       values=[
                                           "Columna1",
                                           "Columna2",
                                           "Columna3",
                                           "-- Ninguna"
                                            ])
-        cbo_variable_dependiente.grid(row=0,column=4,padx=(5,10),sticky="nsew",pady=(0,10))
-        cbo_variable_dependiente.set("Variable Dependiente")
+        self.cbo_variable_dependiente.grid(row=0,column=4,padx=(5,10),sticky="nsew",pady=(0,10))
+        self.cbo_variable_dependiente.set("Variable Dependiente")
 
         for col in range(5):  # Tienes 5 elementos
             header_hijo.grid_columnconfigure(col, weight=1)
@@ -434,18 +781,10 @@ class App(ctk.CTk):
         self.txt_filtro.grid(row=1,column=0,padx=(10,5),sticky="nsew")
         self.txt_filtro.bind("<Return>",self.___solicitud_filtrar)
 
-        cbo_convertir_tipo = ctk.CTkComboBox(header_hijo,
-                                      values=[
-                                          "Texto a Número (int)",
-                                          "Texto a Número (float)",
-                                          "Texto a Fecha (datatime)",
-                                          "Texto a Categoría",
-                                          "Número a Texto",
-                                          "Fecha a Texto",
-                                          "-- Ninguna"
-                                           ])
-        cbo_convertir_tipo.grid(row=1,column=1,padx=(5,5),sticky="nsew")
-        cbo_convertir_tipo.set("Convertir Tipo de Datos")
+        btn_convert_data_type = ctk.CTkButton(header_hijo,
+                                              text="Convertir Tipo de Datos",
+                                              command=self.__convert_data_type)
+        btn_convert_data_type.grid(row=1,column=1,padx=(5,5),sticky="nsew")
         
         cbo_ANO = ctk.CTkComboBox(header_hijo,
                                       values=[
@@ -457,18 +796,13 @@ class App(ctk.CTk):
         cbo_ANO.grid(row=1,column=2,padx=(5,5),sticky="nsew")
         cbo_ANO.set("A. No Superivosado")
         
-        cbo_calcular_estadisticas = ctk.CTkComboBox(header_hijo,
-                                      values=[
-                                          "Medi",
-                                          "Mediana",
-                                          "Desviacion Estandar",
-                                          "Varianza",
-                                          "Mínimo",
-                                          "Máximo",
-                                          "-- Ninguna"
-                                           ])
-        cbo_calcular_estadisticas.grid(row=1,column=3,padx=(5,5),sticky="nsew")
-        cbo_calcular_estadisticas.set("Estadísticas")
+        
+        btn_calculate_statistics = ctk.CTkButton(header_hijo,
+                                                 text="Estadísticas",
+                                                 command= self.__calculate_statistics
+                                        )
+        btn_calculate_statistics.grid(row=1,column=3,padx=(5,5),sticky="nsew")
+        
 
         btn_aplicar = ctk.CTkButton(header_hijo,command=self.aplicar_cambios,text="Aplicar")
         btn_aplicar.grid(row=1,column=4,padx=(5,10),sticky="nsew")
@@ -492,11 +826,15 @@ class App(ctk.CTk):
         scroll_x.config(command=self.tree.xview)
         self.tree.pack(padx=20, pady=20, fill="both", expand=True)
     
-    def mostrar_datos_en_tabla(self,df):
-        self.tree["columns"] = list(df.columns)
-        
+    def show_tree_viewport(self):
+        print("--- Renderizando tabla df")
+        self.df.info()
+        # tree 
+        self.tree["columns"] = list(self.df.columns)
+        self.cbo_variable_dependiente.configure(values=list(self.df.columns))
+
         # encambezado (cols)
-        for col in df.columns:
+        for col in self.df.columns:
             self.tree.heading(col,text=col.capitalize())
             self.tree.column(col, anchor="center")
         
@@ -505,7 +843,7 @@ class App(ctk.CTk):
             self.tree.delete(row)
         
         # Insertar datos (50 primeras filas)
-        for vector in df.values[:50]:
+        for vector in self.df.values[:50]:
             self.tree.insert("","end",values=tuple(vector))
 
 
@@ -553,8 +891,12 @@ class App(ctk.CTk):
                                      command=self.__enviar_datos_entrenamiento)
         btn_entrenar.pack(fill="x",expand=True,side="left")
 
-        frame_tabla = ctk.CTkFrame(self.tab2,height=400,fg_color="#ad96fb")
-        frame_tabla.pack(fill="x",side="top",pady=(10,20),padx=20)
+        frame_result = ctk.CTkFrame(self.tab2,height=400,fg_color="#ad96fb")
+        frame_result.pack(fill="x",side="top",pady=(10,20),padx=20)
+        btn_historial = ctk.CTkButton(frame_result,
+                                      text="Mostrar Estidisticos",
+                                      command=self.mostrar_historial_estadisticas)
+        btn_historial.pack()
 
     def crear_dashboard(self):
         # Frame principal
