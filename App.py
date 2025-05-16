@@ -75,56 +75,55 @@ class App(ctk.CTk):
             "Texto a Categoría",
             "Número a Texto",
             "Fecha a Texto",
+            "Número (float) a Número (int)",
+            "Número (int) a Número (float)",
         ]
         self.pop_conversion = ctk.CTkToplevel(self)
         self.pop_conversion.title("Conversion")
+        self.pop_conversion.resizable(False, False)
         self.pop_conversion.transient(self)
         self.pop_conversion.lift()
         self.pop_conversion.focus_force()
         self.pop_conversion.grab_set()
 
-        
-        cbo_statistics = ctk.CTkComboBox(self.pop_conversion,
-                                         values=values
-                                         )
-        cbo_statistics.grid(row=1,column=0,padx=(20,20),pady=(20,20))
-        
-        
-        variable_conversion = ctk.CTkComboBox(
-            self.pop_conversion,
-            values = list(self.df.columns))
-        variable_conversion.grid(row=1,column=1,padx=(0,20),pady=(20,20))
+        # Crear un marco desplazable
+        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_conversion, width=500, height=300)
+        self.scroll_frame.grid(row=0, column=0, padx=10, pady=10)
+
+        # Guardar una lista para agregar nuevas filas dinámicamente
+        self.conversion_row = 1
+
+        # Fila inicial
+        cbo_statistics = ctk.CTkComboBox(self.scroll_frame, values=values)
+        cbo_statistics.grid(row=0, column=0, padx=(20, 20), pady=(20, 20))
+
+        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        variable_conversion.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
+
+        self.chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
+        self.chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
         
         self.btn_add_variables = ctk.CTkButton(self.pop_conversion,
                                           text="+",
                                           width=50,
                                           command=lambda:self.add_variable_conversion(values)
                                           )
-        self.btn_add_variables.grid(row=2,column=0,padx=20)
+        self.btn_add_variables.grid(row=1,column=0,padx=20,pady=(0,20))
 
         self.btn_conversion = ctk.CTkButton(self.pop_conversion,
                                   text="Convertir Tipo",
                                   command=self.__conversion
                                   )
-        self.btn_conversion.grid(row=3,column=1,padx=(0,20),pady=(0,20))
+        self.btn_conversion.grid(row=2,column=0,padx=(0,20),pady=(0,20))
 
     def add_variable_conversion(self,values):
-        fila = self.btn_add_variables.grid_info()["row"] 
-        ctk.CTkComboBox(self.pop_conversion,
-                        values=values
-                        ).grid(row=fila,column=0,padx=(20,20),pady=(0,20))
-        ctk.CTkComboBox(self.pop_conversion,
-                        values=list(self.df.columns)
-                        ).grid(row=fila,column=1,pady=(0,20,),padx=(0,20))
-        
-        self.btn_add_variables.grid_configure(row=fila+1)
-        self.btn_conversion.grid_configure(row=fila+2)
-        geo = self.pop_conversion.geometry()
-        ancho_alto, x_y =geo.split('+', 1)
-        ancho, alto = map(int, ancho_alto.split('x'))
-        x, y = map(int, x_y.split('+'))
-        nuevo_alto = alto + 50
-        self.pop_conversion.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
+        fila = self.conversion_row
+
+        ctk.CTkComboBox(self.scroll_frame, values=values).grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
+        ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns)).grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
+        ctk.CTkCheckBox(self.scroll_frame, text="Misma columna").grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
+
+        self.conversion_row += 1
     def __conversion(self):
         pass
 
