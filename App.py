@@ -10,6 +10,8 @@ import json
 import config
 import os
 from PIL import Image
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
 class App(ctk.CTk):
 
@@ -66,6 +68,82 @@ class App(ctk.CTk):
         self.tab1 = self.notebook.add("Procesar")
         self.tab2 = self.notebook.add("Entrenamiento")
         self.tab3 = self.notebook.add("Dashboard")
+
+    def top_level_params_ANO(self,metodo):
+        
+        if metodo == "-- Ninguna":
+            self.cbo_ANO.set("A. No Superivosado")
+            return
+        top = ctk.CTkToplevel(self)
+        top.title(f"Configurar {metodo}")
+        top.geometry("400x400")
+        top.resizable(False, False)
+
+        # Poner en primer plano con foco
+        top.transient(self)
+        top.lift()
+        top.focus_force()
+        top.grab_set()
+
+        # Selección de columnas
+        lbl_cols = ctk.CTkLabel(top, text="Selecciona columnas:")
+        lbl_cols.pack(pady=5)
+
+        columnas = list(self.df.head(10).select_dtypes(include="number").columns)
+        selected_cols = []
+
+        for col in columnas:
+            var = ctk.BooleanVar()
+            chk = ctk.CTkCheckBox(top, text=col, variable=var)
+            chk.pack(anchor="w", padx=10,pady=10)
+            selected_cols.append((col, var))
+
+        n_clusters_entry = None
+        n_components_entry = None
+        # Hiperparámetros
+        print(metodo)
+        if metodo == "KMeans":
+            ctk.CTkLabel(top, text="Número de clusters:").pack(pady=5)
+            n_clusters_entry = ctk.CTkEntry(top, placeholder_text="Ej. 3")
+            n_clusters_entry.pack(pady=5)
+
+        elif metodo == "PCA":
+            ctk.CTkLabel(top, text="Número de componentes:").pack(pady=5)
+            n_components_entry = ctk.CTkEntry(top, placeholder_text="Ej. 2")
+            n_components_entry.pack(pady=5)
+
+        # Botón de aplicar
+        def aplicar():
+            columnas_seleccionadas = [col for col, var in selected_cols if var.get()]
+            if metodo == "KMeans":
+                n_clusters = int(n_clusters_entry.get())
+                print(f"KMeans con columnas {columnas_seleccionadas} y {n_clusters} clusters")
+                
+                # Llama aquí a tu función de KMeans con esos parámetros
+                df_filtrado = self.df[columnas_seleccionadas]
+                modelo_kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                self.df['cluster'] = modelo_kmeans.fit_predict(df_filtrado)
+                print("Clustering completado. Nuevas etiquetas guardadas en 'cluster'.")
+                
+
+            elif metodo == "PCA":
+                n_components = int(n_components_entry.get())
+                print(f"PCA con columnas {columnas_seleccionadas} y {n_components} componentes")
+                # Llama aquí a tu función de PCA con esos parámetros
+                df_filtrado = self.df[columnas_seleccionadas]
+                pca = PCA(n_components=n_components)
+                componentes = pca.fit_transform(df_filtrado)
+
+                # Guardar cada componente como nueva columna
+                for i in range(n_components):
+                    self.df[f'COMP_{i+1}'] = componentes[:, i]
+
+                print(f"PCA completado. Se añadieron {n_components} componentes como columnas.")
+            self.show_tree_viewport()
+            self.cbo_ANO.set("A. No Superivosado")
+            top.destroy()
+
+        ctk.CTkButton(top, text="Aplicar", command=aplicar).pack(pady=10)
 
     def __convert_data_type(self):
         self.filas_conversion = []
@@ -158,6 +236,8 @@ class App(ctk.CTk):
                 ]
         self.popup_statistics = ctk.CTkToplevel(self)
         self.popup_statistics.title("Estadísticas")
+        self.popup_statistics.resizable(False,False)
+
         self.popup_statistics.transient(self)
         self.popup_statistics.lift()
         self.popup_statistics.focus_force()
@@ -290,7 +370,7 @@ class App(ctk.CTk):
             return
         
         self.popup_generate_graph = ctk.CTkToplevel(self)
-        # self.popup_generate_graph.geometry("400+400")
+        self.popup_generate_graph.resizable(False,False)
         self.popup_generate_graph.transient(self)
         self.popup_generate_graph.lift()
         self.popup_generate_graph.focus_force() 
@@ -350,12 +430,13 @@ class App(ctk.CTk):
     def __select_columns(self):
         popup_choose_columns = ctk.CTkToplevel(self)
         popup_choose_columns.title("Elige las columnas")
+        popup_choose_columns.resizable(False,False)
 
         popup_choose_columns.transient(self)
         popup_choose_columns.lift()
         popup_choose_columns.focus_force()
         popup_choose_columns.grab_set()
-
+        
 
         group_check = {}
         for i,col in enumerate(self.df.columns):
@@ -397,10 +478,13 @@ class App(ctk.CTk):
         else:
 
             popup_choose_columns = ctk.CTkToplevel(self)
-            popup_choose_columns.title("Elige las columnas")
+            popup_choose_columns.title(f"Calcular {function}")
+            popup_choose_columns.resizable(False,False)
+
+                    # Poner en primer plano con foco
+            popup_choose_columns.transient(self)
             popup_choose_columns.focus()
             popup_choose_columns.lift()
-            popup_choose_columns.geometry("400x500")
 
             group_check = {}
             columns_number = self.df.select_dtypes(include='number').columns
@@ -804,15 +888,15 @@ class App(ctk.CTk):
                                               command=self.__convert_data_type)
         btn_convert_data_type.grid(row=1,column=1,padx=(5,5),sticky="nsew")
         
-        cbo_ANO = ctk.CTkComboBox(header_hijo,
+        self.cbo_ANO = ctk.CTkComboBox(header_hijo,
                                       values=[
                                           "PCA",
-                                          "Kmeans",
-                                          "Linkage",
+                                          "KMeans",
                                           "-- Ninguna"
-                                           ])
-        cbo_ANO.grid(row=1,column=2,padx=(5,5),sticky="nsew")
-        cbo_ANO.set("A. No Superivosado")
+                                           ],
+                                           command=self.top_level_params_ANO)
+        self.cbo_ANO.grid(row=1,column=2,padx=(5,5),sticky="nsew")
+        self.cbo_ANO.set("A. No Superivosado")
         
         
         btn_calculate_statistics = ctk.CTkButton(header_hijo,
