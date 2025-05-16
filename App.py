@@ -68,6 +68,8 @@ class App(ctk.CTk):
         self.tab3 = self.notebook.add("Dashboard")
 
     def __convert_data_type(self):
+        self.filas_conversion = []
+        
         values=[
             "Texto a Número (int)",
             "Texto a Número (float)",
@@ -94,14 +96,17 @@ class App(ctk.CTk):
         self.conversion_row = 1
 
         # Fila inicial
-        cbo_statistics = ctk.CTkComboBox(self.scroll_frame, values=values)
-        cbo_statistics.grid(row=0, column=0, padx=(20, 20), pady=(20, 20))
+        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values)
+        variable_conversion.grid(row=0, column=0, padx=(20, 20), pady=(20, 20))
 
-        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
-        variable_conversion.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
+        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        variable_column.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
-        self.chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
-        self.chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
+        chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
+        
+        # Guardar los widgets en una lista
+        self.filas_conversion.append((variable_conversion, variable_column, chk_column))
         
         self.btn_add_variables = ctk.CTkButton(self.pop_conversion,
                                           text="+",
@@ -119,13 +124,27 @@ class App(ctk.CTk):
     def add_variable_conversion(self,values):
         fila = self.conversion_row
 
-        ctk.CTkComboBox(self.scroll_frame, values=values).grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
-        ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns)).grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
-        ctk.CTkCheckBox(self.scroll_frame, text="Misma columna").grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
+        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values)
+        variable_conversion.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
+        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        variable_column.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
+        chk_column.grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
+
+        # Guardar los widgets en una lista
+        self.filas_conversion.append((variable_conversion, variable_column, chk_column))
 
         self.conversion_row += 1
     def __conversion(self):
-        pass
+        for i, (variable_conversion, variable_column, chk_column) in enumerate(self.filas_conversion):
+            tipo_conversion = variable_conversion.get()
+            columna = variable_column.get()
+            usar_misma = chk_column.get()  # Retorna 1 si está marcado, 0 si no
+
+            print(f"Fila {i+1}:")
+            print(f"  Tipo conversión: {tipo_conversion}")
+            print(f"  Columna: {columna}")
+            print(f"  ¿Misma columna?: {'Sí' if usar_misma else 'No'}")
 
 
     def __calculate_statistics(self):
