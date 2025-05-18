@@ -3,13 +3,21 @@ import requests
 import json
 from tkinter import messagebox
 
-class Login(ctk.CTk):
+class Login(ctk.CTkToplevel):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.parent = parent
         self.authenticated = False
+        self.with_df = False
+        self.is_new_user = False
+
+        #self.transient(self)
+        self.lift()
+        self.focus_force()
+        self.grab_set()
+    
         self.interfaz_login()
-        
 
         
     
@@ -27,31 +35,34 @@ class Login(ctk.CTk):
 
             if res.status_code == 200:
                 self.authenticated = True
-
+                 
                 auth_token= res.json()["token"]
-                print("Logeado con éxito, token:", auth_token)
+                self.parent.auth_token = auth_token
+                self.is_new_user=False
+                print("-- Servidor : Logeado con éxito, token:", auth_token)
                 
-                csrf_token = res.cookies.get('csrftoken')
-                print("Tocken csrf:",csrf_token)
 
-                session_data = {
-                    "auth_token": auth_token,
-                    "csrf_token":csrf_token,
-                    "username": nombre,
-                }
-                with open("session.json", "w") as f:
-                    json.dump(session_data, f)
+                if self.recordarme_var.get():
+                    session_data = {
+                        "auth_token": auth_token,
+                        "username": nombre,
+                    }
+                    with open("session.json", "w") as f:
+                        json.dump(session_data, f)
 
-                self.authenticated = True
-                self.after(100, self.destroy)
-
+                    self.after(100, self.destroy)
+                
+                self.destroy()
             else:
                 self.authenticated = False
                 messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+            
+
 
         except Exception as e:
             messagebox.showerror("Error de red", str(e))
 
+        
 
     def __send_signup(self,txt_nombre,txt_password,txt_password2):
         nombre = txt_nombre.get()
@@ -73,28 +84,31 @@ class Login(ctk.CTk):
             res = requests.post("http://127.0.0.1:8000/api/signup/", data=json.dumps(data), headers=headers)
 
             if res.status_code == 201:
-                auth_token= res.json()["token"]
-                print("Registrado con éxito, token:", auth_token)
-                csrf_token = res.cookies.get('csrftoken')
-                print("Tocken csrf:",csrf_token)
+                self.authenticated = True
 
-                session_data = {
-                    "auth_token": auth_token,
-                    "csrf_token":csrf_token,
-                    "username": nombre,
-                }
-                with open("session.json", "w") as f:
-                                    json.dump(session_data, f)
+                auth_token= res.json()["token"]
+                self.parent.auth_token = auth_token
+                self.is_new_user = True
+                print("Registrado con éxito, token:", auth_token)
+
+                if self.recordarme_var.get():
+                    session_data = {
+                        "auth_token": auth_token,
+                        "username": nombre,
+                    }
+                    with open("session.json", "w") as f:
+                        json.dump(session_data, f)
 
 
                 messagebox.showinfo("Éxito", "Usuario creado correctamente.")
-                self.authenticated = True
                 self.after(100, self.destroy)
-
+                self.destroy()
             else:
                 print("Error:", res.json())
                 messagebox.showerror("Error", res.json().get("error", "Error desconocido."))
                 self.authenticated = False
+            
+
         except Exception as e:
             print("Error", e)
             messagebox.showerror("Error de red", str(e))
@@ -141,7 +155,6 @@ class Login(ctk.CTk):
                                              txt_password, 
                                              txt_password2
                                          ),
-                                         font=("Arial",20,"bold"),
                                          )
         btn_signup.grid(row=4,column=0,columnspan=3,pady=(0,20))
 
@@ -150,6 +163,17 @@ class Login(ctk.CTk):
                                         command=self.__frame_singin
                                         )
         btn_singin.grid(row=5,column=0,columnspan=3)
+
+
+        self.recordarme_var = ctk.BooleanVar()
+
+        check_recordarme = ctk.CTkCheckBox(
+            self.frame_incio,
+            text="Recordarme",
+            variable=self.recordarme_var
+        )
+        check_recordarme.grid(row=6, column=1, sticky="w")
+
 
     def __toogle_password(self,*args):
         if  not self.visible:

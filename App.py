@@ -1,4 +1,7 @@
 import customtkinter as ctk
+import sqlalchemy
+import mysql.connector
+
 from tkinter import ttk
 from tkinter import filedialog, messagebox
 from tkinter import PhotoImage 
@@ -14,6 +17,32 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from login import Login
+
+
+def verificar_sesion_guardada():
+    print("---Verificndo auth_token---")
+    if os.path.exists("session.json"):
+        print("Tiene sesion guardada")
+        with open("session.json", "r") as f:
+            session = json.load(f)
+
+        token = session.get("auth_token")
+
+        if token:
+            # Validamos el token con el backend
+            print("validando el token")
+            res = requests.get("http://127.0.0.1:8000/api/verify_token/", headers={
+                "Authorization": f"Token {token}"
+            })
+
+            if res.status_code == 200:
+                print("--- Servidor: ",res.json())
+                
+                return True  # El token sigue siendo válido
+    print("No tiene sesion guardada ")
+    return False
+
 
 def center_window(ventana):
     ventana.update_idletasks()  # Asegura que se obtienen dimensiones reales
@@ -26,14 +55,117 @@ def center_window(ventana):
 class App(ctk.CTk):
 
     def __init__(self, fg_color = None, **kwargs):
-        super().__init__(fg_color, **kwargs)        
+        super().__init__(fg_color, **kwargs)
+        
+
+        
         self.url_csv = None
         self.url_csv = None
         self.df = None
         self.result_statistics = []
         self.graph_widgets = {}
+        self.table_name_list = []
         self.crear_interfaz()
 
+        
+        # Inicia sesión
+        if not  verificar_sesion_guardada():
+            print("Abriendo login")
+            login = Login(self)  # le pasas la ventana padre
+            login.grab_set()     # hace modal (no permite usar otras ventanas)
+            self.wait_window(login)  # bloquea hasta que login se cierre
+            if not login.is_new_user:
+                self.try_load_data_from_mysql()
+                self.get_table_name_list()
+            
+    def get_table_name_list(self):
+
+        headers = {
+            "Authorization": f"Token {self.auth_token}"
+        }
+
+        res = requests.get(config.VIEW_TABLE_NAME_LIST, headers=headers)
+
+        if res.status_code == 200:
+            tablas = res.json()
+            for tabla in tablas:
+                print(f"Nombre: {tabla['table_name']}, BD: {tabla['db_name']}, Fecha: {tabla['created_at']}")
+                self.table_name_list.append(tabla['table_name'])
+                self.db_name= tabla["db_name"]
+
+        else:
+            print("Error al obtener tablas:", res.status_code)
+       
+
+
+    def try_load_data_from_mysql(self):
+        
+        print("Token en App: ",self.auth_token)
+        headers = {
+            "Authorization": f"Token {self.auth_token}"
+        }
+        
+        res = requests.get(
+            url=config.VIEW_LAST_TABLE,
+            headers=headers
+        )
+        print(config.VIEW_LAST_TABLE)
+        if res.status_code == 200:
+            print("---Servidor:", res.json())
+
+            self.table_name = res.json()["table_name"]
+            self.db_name = res.json()["db_name"]
+            print("--Conectandose a mysql para obtener la tabla")
+            engine = config.VAR_CONEXION + "/" + self.db_name
+            try:
+                self.df = pd.read_sql(f"SELECT * FROM {self.table_name}", engine)
+                self.show_tree_viewport()
+            
+            except sqlalchemy.exc.OperationalError as e:
+                print("Error al conectar con la base de datos o al consultar la tabla:")
+                print(str(e))
+                self.create_pop_load_data()  # Muestra ventana para cargar datos manualmente
+
+            except Exception as e:
+                print("Ocurrió un error inesperado:")
+                print(str(e))
+                self.create_pop_load_data()
+
+        else:
+            print(res.json())
+            print("No hay tabla guardada en mysql")    
+            self.create_pop_load_data()
+
+    def create_pop_load_data(self):
+        pop_load_data = ctk.CTkToplevel(self)
+        pop_load_data.resizable(False, False)
+        #pop_load_data.overrideredirect(True)
+
+        # Mostrar en primer  plano
+        pop_load_data.transient(self)
+        pop_load_data.lift()
+        pop_load_data.focus_force()
+        pop_load_data.grab_set()
+        pop_load_data.update()
+
+        #centrar ventana
+        center_window(pop_load_data)
+        
+        ctk.CTkLabel(pop_load_data,text="Selecciona la Fuente")
+        options = ["Archivo CSV",
+                    "Archivo Excel",
+                    "MySQL",
+                    "PostgreSQL",
+                    "SQLServer"]
+        btn_list =[]
+
+        for i, tipo in enumerate(options):
+            btn = ctk.CTkButton(pop_load_data,
+                        text=tipo,
+                        command=lambda t=tipo: self.__ventana_conexion(t)
+                        )
+            btn.grid(row=i+1, column=0, padx=20, pady=10)
+            btn_list.append(btn)
 
 
     def crear_interfaz(self):
@@ -357,7 +489,7 @@ class App(ctk.CTk):
                 "varianza",
                 "minimo",
                 "maximo"
-                ]
+            ]
         self.popup_statistics = ctk.CTkToplevel(self)
         self.popup_statistics.title("Estadísticas")
         self.popup_statistics.resizable(False,False)
@@ -788,12 +920,44 @@ class App(ctk.CTk):
             messagebox.showerror("Campos Invalidos para la Transformación", ex)
 
 
-    def __solicitud_post_csv(self,encoding,sep):
+    def post_table_name(self,table_name):
+        url = config.VIEW_SAVE_TABLE_NAME
+        headers = {
+            "Authorization": f"Token {self.auth_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "table_name": table_name,
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            if response.status_code == 201:
+                print("✅ Tabla guardada con éxito:", response.json())
+                return response.json()
+            else:
+                print(f"❌ Error al guardar tabla: {response.status_code} - {response.text}")
+                return None
+        except Exception as e:
+            print("❌ Error de conexión al guardar tabla:", str(e))
+            return None
+
+
+    def __solicitud_post_csv(self,encoding,sep,table_name):
         
         if self.url_csv is None or encoding == "" or sep == "":
             messagebox.showerror("Campos Invalidos para la Transformación", "Por favor, completa todos los campos obligatorios.")
             return
         
+        if table_name in self.table_name_list:
+            messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
+            return
+        else:
+            print("--- añadiendo tabla_name---")
+            self.table_name_list.append(table_name)
+            print("---saving table name")
+            self.post_table_name(table_name)
+
         print("--- solicitar post csv")
         print("--datos: ",self.url_csv,encoding,sep)
         with open(self.url_csv,"rb") as f:
@@ -801,8 +965,7 @@ class App(ctk.CTk):
             data = {
                 "fuente": "csv",
                 "encoding": encoding,
-                "sep" : sep,
-                
+                "sep" : sep                
             }
 
             
@@ -830,11 +993,20 @@ class App(ctk.CTk):
 
         
 
-    def __solicitud_post_excel(self,txt_sheet_name):
-        sheet_name = txt_sheet_name.get()
+    def __solicitud_post_excel(self,sheet_name,table_name):
+        
         if self.url_excel is None or sheet_name=="" :
             messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos y establece la Hoja.")
             return
+        
+        
+        if table_name in self.table_name_list:
+            messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
+            return
+        else:
+            print("--- post guardar nombre de tabla---")
+            self.table_name_list.append(table_name)
+            self.post_table_name(table_name)
         
         print("--- solicitar post excel")
         print("--datos: ",self.url_excel)
@@ -872,7 +1044,14 @@ class App(ctk.CTk):
                 messagebox.showwarning("Campos requeridos","Por favor, Completa los paramtros de la conexion.")
                 return
 
-        
+        table_name = kwargs["nombre_tabla"]
+        if table_name in self.table_name_list:
+            messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
+            return
+        else:
+            print("--- post guardar nombre de tabla---")
+            self.table_name_list.append(table_name)
+            self.post_table_name(table_name)
         data = {
             "fuente": "SGBD",
             "SGBD":kwargs["SGBD"],
@@ -886,7 +1065,7 @@ class App(ctk.CTk):
         }
 
         print("--- Enviando credenciales para que el servidor obtenga la tabla")
-        
+
 
         try:
             response = requests.post(
@@ -970,15 +1149,24 @@ class App(ctk.CTk):
             txt_sheet_name = ctk.CTkEntry(self.form)
             txt_sheet_name.grid(row=1,column=1,padx=(0,10),pady=(10,20))
 
+            lbl_table_name = ctk.CTkLabel(self.form,text="Nombre tabla")
+            lbl_table_name.grid(row=2,column=0,padx=(50,20),pady=(10,20))
+
+            txt_table_name = ctk.CTkEntry(self.form)
+            txt_table_name.grid(row=2,column=1,padx=(0,10),pady=(10,20)) 
+
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=lambda:self.__solicitud_post_excel(txt_sheet_name))
-            btn_enviar.grid(row=2,column=0,columnspan=2,pady=(10,20))
+                                       command=lambda:self.__solicitud_post_excel(
+                                            txt_sheet_name.get(),
+                                            txt_table_name.get())
+                                            )
+            btn_enviar.grid(row=3,column=0,columnspan=2,pady=(10,20))
+
         
         elif tipo_bbdd.strip() == "Archivo CSV":
             
-            self.form.geometry("370x200")
-
+  
             lbl_file = ctk.CTkLabel(self.form,text="CSV")
             lbl_file.grid(row=0,column=0,padx=(50,20),pady=(20,10),sticky="e")
             txt_file = ctk.CTkEntry(self.form)
@@ -998,13 +1186,21 @@ class App(ctk.CTk):
             lbl_sep.grid(row=2,column=0,padx=(50,20),pady=(10,10),sticky="e")
             txt_sep = ctk.CTkEntry(self.form)
             txt_sep.grid(row=2,column=1,padx=(0,50),pady=(10,10))
+            
+            lbl_table_name = ctk.CTkLabel(self.form,text="Nombre tabla")
+            lbl_table_name.grid(row=3,column=0,padx=(50,20),pady=(10,10))
+
+            txt_table_name = ctk.CTkEntry(self.form)
+            txt_table_name.grid(row=3,column=1,padx=(0,50),pady=(10,10)) 
+            
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=lambda: self.__solicitud_post_csv(
                                                                                  txt_encoding.get(),
-                                                                                 txt_sep.get()))
+                                                                                 txt_sep.get(),
+                                                                                 txt_table_name.get()))
             
-            btn_enviar.grid(row=3,column=1,pady=(10,10),padx=(0,50))
+            btn_enviar.grid(row=4,column=1,pady=(10,10),padx=(0,50))
 
         elif tipo_bbdd in ["MySQL","PostgreSQL","SQLServer"] :  
             
@@ -1052,8 +1248,8 @@ class App(ctk.CTk):
                                            host=txt_host.get(),
                                            db=txt_db.get(),
                                            consulta=txt_consulta.get(),
-                                          puerto =txt_puerto.get(),
-                                          SGBD = tipo_bbdd
+                                           puerto =txt_puerto.get(),
+                                           SGBD = tipo_bbdd
                                        )
                                        )
             
@@ -1237,7 +1433,7 @@ class App(ctk.CTk):
         frame_btn.grid(row=0,rowspan=2,column=3,sticky="snew")
         btn_entrenar = ctk.CTkButton(frame_btn,
                                      text="Entrenar",
-                                     command=self.__enviar_datos_entrenamiento)
+                                     )
         btn_entrenar.pack(fill="x",expand=True,side="left")
 
         frame_result = ctk.CTkFrame(self.tab2,height=400,fg_color="#ad96fb")
@@ -1456,7 +1652,31 @@ class App(ctk.CTk):
         frame_movil.place(x=100,y=100)
 
     def aplicar_cambios(self):
-        pass
+        if self.df is None:
+            messagebox.showinfo("No hay tabla","Debe cargar una tabla para guardarla en bbdd")
+        
+        nombre_tabla = self.table_name
+        try:
+             
+            url_engine = f"mysql+mysqlconnector://cliente:cliente1234@localhost/"
+            print("url engine:", url_engine)
+
+
+            engine_root = sqlalchemy.create_engine(url_engine)
+            db_name = self.db_name
+            with engine_root.connect() as conn:
+                conn.execute(sqlalchemy.text(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
+
+            engine = sqlalchemy.create_engine(f"{url_engine}{db_name}")
+            print("exportando a MySQL la tabla", nombre_tabla)
+            self.df.to_sql(name=nombre_tabla, con=engine, if_exists='replace', index=False)
+
+            print(f"DataFrame guardado en la base de datos '{db_name}'")
+            print("Saliendo de funcion datos> crear_db_clientes()")
+
+        except Exception as ex:
+            print(ex)
+
     def buscar_imagen(self):
         cbo_imagen = filedialog.askopenfilename(
             title="Selecciona Imagen (png,jpg,etc)",
@@ -1488,8 +1708,5 @@ class App(ctk.CTk):
                         foreground="white",
                         padding=(10, 10),
                         font=("Arial", 10, "bold"))
-        
-    def __enviar_datos_entrenamiento(self):
-        pass
 
 
