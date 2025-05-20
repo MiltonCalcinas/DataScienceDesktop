@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import sqlalchemy
 import mysql.connector
-
+import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog, messagebox
 from tkinter import PhotoImage 
@@ -140,6 +140,7 @@ class App(ctk.CTk):
         pop_load_data = ctk.CTkToplevel(self)
         pop_load_data.resizable(False, False)
         #pop_load_data.overrideredirect(True)
+        pop_load_data.configure(fg_color=config.COLOR_FONDO)
 
         # Mostrar en primer  plano
         pop_load_data.transient(self)
@@ -162,7 +163,8 @@ class App(ctk.CTk):
         for i, tipo in enumerate(options):
             btn = ctk.CTkButton(pop_load_data,
                         text=tipo,
-                        command=lambda t=tipo: self.__ventana_conexion(t)
+                        command=lambda t=tipo: self.__ventana_conexion(t),
+                        fg_color=config.COLOR_FONDO_BOTON
                         )
             btn.grid(row=i+1, column=0, padx=20, pady=10)
             btn_list.append(btn)
@@ -184,30 +186,33 @@ class App(ctk.CTk):
 
     def crear_sidebar(self):
         menu = ctk.CTkFrame(self)
-        menu.pack(side="top",fill="x",expand=True,padx=10)
-        
+        menu.pack(side="top",fill="x",expand=False,padx=10)
+        menu.configure(fg_color=config.COLOR_FONDO)
  
         img_task = ctk.CTkImage(light_image=Image.open(r"iconos\ico_task.png"),size=(20,20))
         btn_task= ctk.CTkButton(menu,
                                 image=img_task,
                                 text="",
                                 width=20,
-                                command=self.__form_task)
+                                command=self.__form_task,
+                                fg_color=config.COLOR_FONDO_BOTON)
         btn_task.grid(row=0,column=0,padx=(0,10))
 
         img_setting = ctk.CTkImage(light_image=Image.open(r"iconos\ico_setting.png"),size=(20,20))
         btn_setting= ctk.CTkButton(menu,
                                 image=img_setting,
                                 text="",
-                                width=20)
+                                width=20,
+                                fg_color=config.COLOR_FONDO_BOTON)
         btn_setting.grid(row=0,column=1)
 
 
     def crear_notebook(self):
         """         CON ESTE CODIGO CREA EL NOTEBOOK Y LAS PESTAÑAS (LUEGO AÑADO LOS OBJETOS,ETC)        """
         self.notebook = ctk.CTkTabview(self)
-        self.notebook.pack(fill="both",expand=True,padx=10,pady=10)
-        
+        self.notebook.pack(fill="both",expand=False,padx=10,pady=10)
+        self.notebook.configure(fg_color=config.COLOR_FONDO)
+
         self.tab1 = self.notebook.add("Procesar")
         self.tab2 = self.notebook.add("Entrenamiento")
         self.tab3 = self.notebook.add("Dashboard")
@@ -229,24 +234,27 @@ class App(ctk.CTk):
 
         scroll_frame = ctk.CTkScrollableFrame(self.pop_filter, width=600, height=300)
         scroll_frame.grid(row=0, column=0, padx=10, pady=10)
+        scroll_frame.configure(fg_color=config.COLOR_FONDO)
         self.scroll_frame = scroll_frame  # guardamos referencia
 
         self.add_variable_filter()
 
         ctk.CTkButton(self.pop_filter, text="+", width=50,
-                    command=self.add_variable_filter).grid(row=1, column=0, padx=(0, 20), pady=(0, 20))
+                    command=self.add_variable_filter,
+                    fg_color=config.COLOR_FONDO_BOTON).grid(row=1, column=0, padx=(0, 20), pady=(0, 20))
 
-        ctk.CTkButton(self.pop_filter, text="Filtrar", command=self.exe_filter).grid(row=2, column=0, padx=(0, 20), pady=(0, 20))
+        ctk.CTkButton(self.pop_filter, text="Filtrar", command=self.exe_filter,
+                      fg_color=config.COLOR_FONDO_BOTON).grid(row=2, column=0, padx=(0, 20), pady=(0, 20))
 
     def add_variable_filter(self):
         fila = self.filter_row
 
         # Combobox para seleccionar columna
-        cbo_columna = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        cbo_columna = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         cbo_columna.grid(row=fila, column=0, padx=20, pady=(10 if fila == 0 else 5))
 
         # Combobox para seleccionar operador (se actualizará dinámicamente)
-        cbo_operador = ctk.CTkComboBox(self.scroll_frame, values=["="])  # placeholder inicial
+        cbo_operador = ctk.CTkComboBox(self.scroll_frame, values=["="],button_color=config.COLOR_FONDO_BOTON)  # placeholder inicial
         cbo_operador.grid(row=fila, column=1, padx=20, pady=(10 if fila == 0 else 5))
 
         # Entry para escribir el valor
@@ -260,10 +268,10 @@ class App(ctk.CTk):
                 operadores = [">", "<", "=", ">=", "<="]
             else:
                 operadores = ["=", "!=", "comienza por", "termina por"]
-            cbo_operador.configure(values=operadores)
+            cbo_operador.configure(values=operadores,button_color=config.COLOR_FONDO_BOTON)
             cbo_operador.set(operadores[0])  # seleccionar por defecto el primero
 
-        cbo_columna.configure(command=actualizar_operadores)
+        cbo_columna.configure(command=actualizar_operadores,button_color=config.COLOR_FONDO_BOTON)
 
         # Agregamos widgets a la lista de control
         self.filter_widgets.append((cbo_columna, cbo_operador, entry_valor))
@@ -338,7 +346,7 @@ class App(ctk.CTk):
         top.grab_set()
 
         # Selección de columnas
-        lbl_cols = ctk.CTkLabel(top, text="Selecciona columnas:")
+        lbl_cols = ctk.CTkLabel(top, text="Selecciona columnas:",text_color=config.COLOR_LETRA_NORMAL)
         lbl_cols.pack(pady=5)
 
         columnas = list(self.df.head(10).select_dtypes(include="number").columns)
@@ -346,7 +354,7 @@ class App(ctk.CTk):
 
         for col in columnas:
             var = ctk.BooleanVar()
-            chk = ctk.CTkCheckBox(top, text=col, variable=var)
+            chk = ctk.CTkCheckBox(top, text=col, variable=var,text_color=config.COLOR_LETRA_NORMAL)
             chk.pack(anchor="w", padx=10,pady=10)
             selected_cols.append((col, var))
 
@@ -355,7 +363,7 @@ class App(ctk.CTk):
         # Hiperparámetros
         print(metodo)
         if metodo == "KMeans":
-            ctk.CTkLabel(top, text="Número de clusters:").pack(pady=5)
+            ctk.CTkLabel(top, text="Número de clusters:",text_color=config.COLOR_LETRA_NORMAL).pack(pady=5)
             n_clusters_entry = ctk.CTkEntry(top, placeholder_text="Ej. 3")
             n_clusters_entry.pack(pady=5)
 
@@ -410,7 +418,7 @@ class App(ctk.CTk):
             "Número (float) a Número (int)",
             "Número (int) a Número (float)",
         ]
-        self.pop_conversion = ctk.CTkToplevel(self)
+        self.pop_conversion = ctk.CTkToplevel(self,fg_color=config.COLOR_FONDO)
         self.pop_conversion.title("Conversion")
         self.pop_conversion.resizable(False, False)
         self.pop_conversion.transient(self)
@@ -423,20 +431,20 @@ class App(ctk.CTk):
         center_window(self.pop_conversion)
 
         # Crear un marco desplazable
-        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_conversion, width=500, height=300)
+        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_conversion, width=500, height=300,fg_color=config.COLOR_FONDO)
         self.scroll_frame.grid(row=0, column=0, padx=10, pady=10)
 
         # Guardar una lista para agregar nuevas filas dinámicamente
         self.conversion_row = 1
 
         # Fila inicial
-        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values)
+        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values,button_color=config.COLOR_FONDO_BOTON)
         variable_conversion.grid(row=0, column=0, padx=(20, 20), pady=(20, 20))
 
-        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         variable_column.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",text_color=config.COLOR_LETRA_NORMAL)
         chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
         
         # Guardar los widgets en una lista
@@ -445,24 +453,26 @@ class App(ctk.CTk):
         self.btn_add_variables = ctk.CTkButton(self.pop_conversion,
                                           text="+",
                                           width=50,
-                                          command=lambda:self.add_variable_conversion(values)
+                                          command=lambda:self.add_variable_conversion(values),
+                                          fg_color=config.COLOR_FONDO_BOTON
                                           )
         self.btn_add_variables.grid(row=1,column=0,padx=20,pady=(0,20))
 
         self.btn_conversion = ctk.CTkButton(self.pop_conversion,
                                   text="Convertir Tipo",
-                                  command=self.__conversion
+                                  command=self.__conversion,
+                                  fg_color=config.COLOR_FONDO_BOTON
                                   )
         self.btn_conversion.grid(row=2,column=0,padx=(0,20),pady=(0,20))
 
     def add_variable_conversion(self,values):
         fila = self.conversion_row
 
-        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values)
+        variable_conversion = ctk.CTkComboBox(self.scroll_frame, values=values,button_color=config.COLOR_FONDO_BOTON)
         variable_conversion.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
-        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns))
+        variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         variable_column.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna")
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",button_color=config.COLOR_FONDO_BOTON)
         chk_column.grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
 
         # Guardar los widgets en una lista
@@ -490,7 +500,7 @@ class App(ctk.CTk):
                 "minimo",
                 "maximo"
             ]
-        self.popup_statistics = ctk.CTkToplevel(self)
+        self.popup_statistics = ctk.CTkToplevel(self,fg_color=config.COLOR_FONDO)
         self.popup_statistics.title("Estadísticas")
         self.popup_statistics.resizable(False,False)
 
@@ -507,10 +517,10 @@ class App(ctk.CTk):
         self.statistics_combos = []  # ← Aquí guardaremos los ComboBox
 
         # Añadir el primer par de ComboBox con referencias
-        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values)
+        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values,button_color=config.COLOR_FONDO_BOTON)
         cbo_stat.grid(row=1, column=0, padx=(20, 20), pady=(20, 20))
 
-        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns))
+        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         cbo_var.grid(row=1, column=1, padx=(0, 20), pady=(20, 20))
 
         self.statistics_combos.append((cbo_stat, cbo_var))
@@ -518,21 +528,21 @@ class App(ctk.CTk):
         self.btn_add_variables = ctk.CTkButton(self.popup_statistics,
                                           text="+",
                                           width=50,
-                                          command=lambda:self.add_variable_statistics(values))
+                                          command=lambda:self.add_variable_statistics(values),fg_color=config.COLOR_FONDO_BOTON)
         self.btn_add_variables.grid(row=2,column=0,padx=20)
 
         self.btn_statistics = ctk.CTkButton(self.popup_statistics,
                                   text="Calcular",
-                                  command=self.__statistics)
+                                  command=self.__statistics,fg_color=config.COLOR_FONDO_BOTON)
         self.btn_statistics.grid(row=3,column=1,padx=(0,20),pady=(0,20))
 
     def add_variable_statistics(self, values):
         fila = self.btn_add_variables.grid_info()["row"]
         
-        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values)
+        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values,button_color=config.COLOR_FONDO_BOTON)
         cbo_stat.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
 
-        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns))
+        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         cbo_var.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
 
         self.statistics_combos.append((cbo_stat, cbo_var))  # ← Guardamos los nuevos ComboBox
@@ -587,7 +597,7 @@ class App(ctk.CTk):
 
     def __show_result_popup(self, resultados):
         self.popup_statistics.destroy()
-        popup_resultados = ctk.CTkToplevel(self)
+        popup_resultados = ctk.CTkToplevel(self,fg_color=config.COLOR_FONDO)
         popup_resultados.title("Resultados de Estadísticas")
         popup_resultados.geometry("400x300")
 
@@ -613,7 +623,7 @@ class App(ctk.CTk):
             messagebox.showinfo("Historial", "No hay estadísticas calculadas todavía.")
             return
 
-        popup = ctk.CTkToplevel(self)
+        popup = ctk.CTkToplevel(self,fg_color=config.COLOR_FONDO)
         popup.title("Historial de Estadísticas")
         popup.geometry("400x300")
 
@@ -633,7 +643,7 @@ class App(ctk.CTk):
             messagebox.showerror("Error","No se han cargado los datos")
             return
         
-        self.popup_generate_graph = ctk.CTkToplevel(self)
+        self.popup_generate_graph = ctk.CTkToplevel(self,fg_color=config.COLOR_FONDO)
         self.popup_generate_graph.geometry("620x100")
         self.popup_generate_graph.resizable(False,False)
 
@@ -653,17 +663,15 @@ class App(ctk.CTk):
                     "Bigote",
                     "Bigote por categoría"
                     ]
-        # ctk.CTkLabel(self.popup_generate_graph,
-        #              text="Graficar Variables",
-        #              width=700).grid(row=0,column=0,columnspan=5)
+
         ctk.CTkComboBox(self.popup_generate_graph,
                                             values=values,
                                             command=lambda valor, fila=1: self._type_graph(valor,1)
+                                            ,button_color=config.COLOR_FONDO_BOTON
         ).grid(row=1,column=0,padx=(20,20),pady=(10,20))
+
         
-        # cbo_variables = ctk.CTkComboBox(self.popup_generate_graph,
-        #                                 values=list(self.df.columns))
-        # cbo_variables.grid(row=1,column=1,pady=(20,20),padx=(0,20))
+
 
         self.btn_add_variables = ctk.CTkButton(self.popup_generate_graph,
                                           text="+",
@@ -671,10 +679,7 @@ class App(ctk.CTk):
                                           command=lambda:self.add_variable(values))
         self.btn_add_variables.grid(row=2,column=0,padx=20,pady=(0,20))
 
-        # self.btn_graph = ctk.CTkButton(self.popup_generate_graph,
-        #                           text="Graficar",
-        #                           command=self._graph)
-        # self.btn_graph.grid(row=3,column=1,padx=(20,20),pady=(0,20))
+
 
     def _type_graph(self, valor, fila):
         # Elimina widgets previos en esa fila
@@ -692,45 +697,54 @@ class App(ctk.CTk):
         widgets = []
         if valor in ["Barra", "Tarta"]:
             cbo_variable = ctk.CTkComboBox(self.popup_generate_graph,
-                                        values=list(self.df.select_dtypes(include="object").columns))
+                                        values=list(self.df.select_dtypes(include="object").columns)
+                                        ,button_color=config.COLOR_FONDO_BOTON)
             cbo_variable.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             btn = ctk.CTkButton(self.popup_generate_graph,
                                 text="G",
                                 width=50,
-                                command=lambda: self._add_graph(valor, categoria=cbo_variable.get()))
+                                command=lambda: self._add_graph(valor, categoria=cbo_variable.get()),
+                                fg_color=config.COLOR_FONDO_BOTON)
             btn.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
             widgets.extend([cbo_variable, btn])
 
         elif valor in ["Linea", "Dispersión"]:
             cbo_x = ctk.CTkComboBox(self.popup_generate_graph,
-                                    values=list(self.df.select_dtypes(include="number").columns))
+                                    values=list(self.df.select_dtypes(include="number").columns)
+                                    ,button_color=config.COLOR_FONDO_BOTON)
             cbo_y = ctk.CTkComboBox(self.popup_generate_graph,
-                                    values=list(self.df.select_dtypes(include="number").columns))
+                                    values=list(self.df.select_dtypes(include="number").columns)
+                                    ,button_color=config.COLOR_FONDO_BOTON)
             cbo_x.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             cbo_y.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
             btn = ctk.CTkButton(self.popup_generate_graph,
                                 text="G",
                                 width=50,
-                                command=lambda: self._add_graph(valor, x=cbo_x.get(), y=cbo_y.get()))
+                                command=lambda: self._add_graph(valor, x=cbo_x.get(), y=cbo_y.get()),
+                                fg_color=config.COLOR_FONDO_BOTON)
             btn.grid(row=fila, column=3, pady=(10, 20), padx=(0, 20))
             widgets.extend([cbo_x, cbo_y, btn])
 
         elif valor == "Bigote":
             cbo_var = ctk.CTkComboBox(self.popup_generate_graph,
-                                    values=list(self.df.select_dtypes(include="number").columns))
+                                    values=list(self.df.select_dtypes(include="number").columns)
+                                    ,button_color=config.COLOR_FONDO_BOTON)
             cbo_var.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             btn = ctk.CTkButton(self.popup_generate_graph,
                                 text="G",
                                 width=50,
-                                command=lambda: self._add_graph(valor, va=cbo_var.get()))
+                                command=lambda: self._add_graph(valor, va=cbo_var.get()),
+                                fg_color=config.COLOR_FONDO_BOTON)
             btn.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
             widgets.extend([cbo_var, btn])
 
         elif valor == "Bigote por categoría":
             cbo_num = ctk.CTkComboBox(self.popup_generate_graph,
-                                    values=list(self.df.select_dtypes(include="number").columns))
+                                    values=list(self.df.select_dtypes(include="number").columns)
+                                    ,button_color=config.COLOR_FONDO_BOTON)
             cbo_cat = ctk.CTkComboBox(self.popup_generate_graph,
-                                    values=list(self.df.select_dtypes(include="object").columns))
+                                    values=list(self.df.select_dtypes(include="object").columns)
+                                    ,button_color=config.COLOR_FONDO_BOTON)
             cbo_num.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             cbo_cat.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
             btn = ctk.CTkButton(self.popup_generate_graph,
@@ -738,7 +752,8 @@ class App(ctk.CTk):
                                 width=50,
                                 command=lambda: self._add_graph(valor,
                                                                 va=cbo_num.get(),
-                                                                categoria=cbo_cat.get()))
+                                                                categoria=cbo_cat.get()),
+                                fg_color=config.COLOR_FONDO_BOTON)
             btn.grid(row=fila, column=3, pady=(10, 20), padx=(0, 20))
             widgets.extend([cbo_num, cbo_cat, btn])
 
@@ -1273,13 +1288,15 @@ class App(ctk.CTk):
                                                "SQLServer",
                                                "-- Ninguna"
                                            ],
-                                           command=self.__ventana_conexion)
+                                           command=self.__ventana_conexion,
+                                           button_color=config.COLOR_FONDO_BOTON)
         cbo_cargar_datos.set("Fuente de Datos")
         cbo_cargar_datos.grid(row=0,column=0,padx=(10,5),sticky="nsew",pady=(0,10))
 
         self.btn_elegir_columnas = ctk.CTkButton(header_hijo,
                                                  text="Elegir Columnas",
-                                                 command=self.__select_columns
+                                                 command=self.__select_columns,
+                                                 fg_color=config.COLOR_FONDO_BOTON
                                                  )
         self.btn_elegir_columnas.grid(row=0,column=1,padx=(5,5),sticky="nsew",pady=(0,10))
         
@@ -1294,13 +1311,15 @@ class App(ctk.CTk):
                                           "abs",
                                           "-- Ninguna"
                                            ],
-                                           command= self.__transform_variables)
+                                           command= self.__transform_variables,
+                                           button_color=config.COLOR_FONDO_BOTON)
         cbo_transform_variables.grid(row=0,column=2,padx=(5,5),sticky="nsew",pady=(0,10))
         cbo_transform_variables.set("Transformar Variables")
 
         btn_generate_graph = ctk.CTkButton(header_hijo,
                                            text="Generar Gráfico",
-                                           command=self._generate_graph)
+                                           command=self._generate_graph,
+                                                 fg_color=config.COLOR_FONDO_BOTON)
         btn_generate_graph.grid(row=0,column=3,padx=(5,5),sticky="nsew",pady=(0,10))
         
 
@@ -1310,7 +1329,8 @@ class App(ctk.CTk):
                                           "Columna2",
                                           "Columna3",
                                           "-- Ninguna"
-                                           ])
+                                           ],
+                                           button_color=config.COLOR_FONDO_BOTON)
         self.cbo_variable_dependiente.grid(row=0,column=4,padx=(5,10),sticky="nsew",pady=(0,10))
         self.cbo_variable_dependiente.set("Variable Dependiente")
 
@@ -1322,13 +1342,15 @@ class App(ctk.CTk):
 
         btn_filtro = ctk.CTkButton(header_hijo,
                                    text="Filtrar",
-                                   command=self.__filtrar)
+                                   command=self.__filtrar,
+                                                 fg_color=config.COLOR_FONDO_BOTON)
         btn_filtro.grid(row=1,column=0,padx=(10,5),sticky="nsew")
 
 
         btn_convert_data_type = ctk.CTkButton(header_hijo,
                                               text="Convertir Tipo de Datos",
-                                              command=self.__convert_data_type)
+                                              command=self.__convert_data_type,
+                                                 fg_color=config.COLOR_FONDO_BOTON)
         btn_convert_data_type.grid(row=1,column=1,padx=(5,5),sticky="nsew")
         
         self.cbo_ANO = ctk.CTkComboBox(header_hijo,
@@ -1337,19 +1359,24 @@ class App(ctk.CTk):
                                           "KMeans",
                                           "-- Ninguna"
                                            ],
-                                           command=self.top_level_params_ANO)
+                                           command=self.top_level_params_ANO,
+                                           button_color=config.COLOR_FONDO_BOTON)
         self.cbo_ANO.grid(row=1,column=2,padx=(5,5),sticky="nsew")
         self.cbo_ANO.set("A. No Superivosado")
         
         
         btn_calculate_statistics = ctk.CTkButton(header_hijo,
                                                  text="Estadísticas",
-                                                 command= self.__calculate_statistics
+                                                 command= self.__calculate_statistics,
+                                                 fg_color=config.COLOR_FONDO_BOTON
                                         )
         btn_calculate_statistics.grid(row=1,column=3,padx=(5,5),sticky="nsew")
         
 
-        btn_aplicar = ctk.CTkButton(header_hijo,command=self.aplicar_cambios,text="Aplicar")
+        btn_aplicar = ctk.CTkButton(header_hijo,
+                                    command=self.aplicar_cambios,
+                                    text="Aplicar",
+                                    fg_color=config.COLOR_FONDO_BOTON)
         btn_aplicar.grid(row=1,column=4,padx=(5,10),sticky="nsew")
 
         frame_tabla = ctk.CTkFrame(self.tab1,height=400,fg_color="#96fba4")
@@ -1393,10 +1420,10 @@ class App(ctk.CTk):
 
 
     def crear_entrenamiento(self):
-        header_padre = ctk.CTkFrame(self.tab2,fg_color="#ad96fb")
+        header_padre = ctk.CTkFrame(self.tab2,fg_color=config.COLOR_FONDO)
         header_padre.pack(side="top",padx=20,pady=(20,10),fill="x")
 
-        header_hijo = ctk.CTkFrame(header_padre)
+        header_hijo = ctk.CTkFrame(header_padre,fg_color=config.COLOR_FONDO)
         header_hijo.pack(fill="both",padx=10,pady=10)
 
     # Configurar el grid para que se expanda
@@ -1416,14 +1443,16 @@ class App(ctk.CTk):
                                             'Svm Classifier',
                                             'Knn Classifier',
                                             'Naive Bayes',
-                                     ])
+                                     ],
+                                     button_color=config.COLOR_FONDO_BOTON)
         cbo_modelo.grid(row=0,column=0,padx=(10,5),pady=(0,10),sticky="snew")
 
         cbo_tipo_busqueda = ctk.CTkComboBox(header_hijo,
                                             values=[
                                                 "Grid Search CV",
                                                 "Randomized Search CV"
-                                            ])
+                                            ],
+                                     button_color=config.COLOR_FONDO_BOTON)
         cbo_tipo_busqueda.grid(row=1,column=0,padx=(10,5),sticky="snew")
 
         area_params = ctk.CTkEntry(header_hijo,height=40,placeholder_text="Establecer Hiperparámetros (con diccionario {})")
@@ -1433,23 +1462,27 @@ class App(ctk.CTk):
         frame_btn.grid(row=0,rowspan=2,column=3,sticky="snew")
         btn_entrenar = ctk.CTkButton(frame_btn,
                                      text="Entrenar",
+                                     fg_color=config.COLOR_FONDO_BOTON
                                      )
         btn_entrenar.pack(fill="x",expand=True,side="left")
 
-        frame_result = ctk.CTkFrame(self.tab2,height=400,fg_color="#ad96fb")
+        frame_result = ctk.CTkFrame(self.tab2,
+                                    height=400,
+                                    fg_color=config.COLOR_FONDO_BOTON)
         frame_result.pack(fill="x",side="top",pady=(10,20),padx=20)
         btn_historial = ctk.CTkButton(frame_result,
                                       text="Mostrar Estidisticos",
-                                      command=self.mostrar_historial_estadisticas)
+                                      command=self.mostrar_historial_estadisticas,
+                                      fg_color=config.COLOR_FONDO_BOTON)
         btn_historial.pack()
 
     def crear_dashboard(self):
         # Frame principal
-        header_padre = ctk.CTkFrame(self.tab3, fg_color="#d30000", corner_radius=20)
+        header_padre = ctk.CTkFrame(self.tab3, fg_color=config.COLOR_FONDO, corner_radius=20)
         header_padre.pack(fill="x")
 
         # Frame secundario
-        header_hijo = ctk.CTkFrame(header_padre, fg_color="#ffa5a5", corner_radius=20)
+        header_hijo = ctk.CTkFrame(header_padre, fg_color=config.COLOR_FONDO, corner_radius=20)
         header_hijo.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Configurar la expansión de filas y columnas
@@ -1463,13 +1496,15 @@ class App(ctk.CTk):
         header_hijo.grid_columnconfigure(3,weight=1,minsize=100)
 
         # Frame de imagen
-        frame_img = ctk.CTkFrame(header_hijo)
+        frame_img = ctk.CTkFrame(header_hijo,fg_color=config.COLOR_FONDO_BOTON)
         frame_img.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
 
-        cbo_fondo = ctk.CTkComboBox(frame_img, values=["Opción 1", "Opción 2", "Opción 3"])
+        cbo_fondo = ctk.CTkComboBox(frame_img, values=["Opción 1", "Opción 2", "Opción 3"],
+                                    button_color=config.COLOR_FONDO_BOTON)
         cbo_fondo.pack(pady=(0, 10), fill="x")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Cargar Imagen", command=self.buscar_imagen)
+        btn_imagen = ctk.CTkButton(frame_img, text="Cargar Imagen", command=self.buscar_imagen,
+                                   fg_color=config.COLOR_FONDO_BOTON)
         btn_imagen.pack(pady=(0, 10), fill="x")
 
         # Frame de fuente
@@ -1480,19 +1515,24 @@ class App(ctk.CTk):
         frame_fuente.grid_columnconfigure(2,weight=1)
         frame_fuente.grid_columnconfigure(3,weight=1)
 
-        cbo_fuente = ctk.CTkComboBox(frame_fuente, values=["Arial", "Times New Roman"])
+        cbo_fuente = ctk.CTkComboBox(frame_fuente, values=["Arial", "Times New Roman"],
+                                     button_color=config.COLOR_FONDO_BOTON)
         cbo_fuente.grid(row=0, column=0, columnspan=3, pady=(0, 10),sticky="nsew")
 
-        cbo_size = ctk.CTkComboBox(frame_fuente, values=[str(i) for i in range(10, 25)], width=100)
+        cbo_size = ctk.CTkComboBox(frame_fuente, values=[str(i) for i in range(10, 25)], width=100,
+                                   button_color=config.COLOR_FONDO_BOTON)
         cbo_size.grid(row=0, column=3, pady=(0, 10), sticky="nsew")
 
-        btn_negrita = ctk.CTkButton(frame_fuente, text="N", font=("Arial", 12, "bold"), width=10)
+        btn_negrita = ctk.CTkButton(frame_fuente, text="N", font=("Arial", 12, "bold"), width=10,
+                                    fg_color=config.COLOR_FONDO_BOTON)
         btn_negrita.grid(row=1, column=0)
 
-        btn_cursiva = ctk.CTkButton(frame_fuente, text="C", font=("Arial", 12, "italic"), width=10)
+        btn_cursiva = ctk.CTkButton(frame_fuente, text="C", font=("Arial", 12, "italic"), width=10,
+                                    fg_color=config.COLOR_FONDO_BOTON)
         btn_cursiva.grid(row=1, column=1)
 
-        btn_subrayado = ctk.CTkButton(frame_fuente, text="S", font=("Arial", 12, "underline"), width=10)
+        btn_subrayado = ctk.CTkButton(frame_fuente, text="S", font=("Arial", 12, "underline"), width=10,
+                                      fg_color=config.COLOR_FONDO_BOTON)
         btn_subrayado.grid(row=1, column=2)
 
         # Frame de configuración de gráfico
@@ -1502,48 +1542,48 @@ class App(ctk.CTk):
         frame_configurar_grafico.grid_columnconfigure(1,weight=1)
         frame_configurar_grafico.grid_columnconfigure(2,weight=1)
 
-        cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico)
+        cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico,button_color=config.COLOR_FONDO_BOTON)
         cbo_relleno.grid(row=1, column=0, sticky="nsew")
 
-        cbo_contorno = ctk.CTkComboBox(frame_configurar_grafico)
+        cbo_contorno = ctk.CTkComboBox(frame_configurar_grafico,button_color=config.COLOR_FONDO_BOTON)
         cbo_contorno.grid(row=1, column=1, sticky="nsew")
 
-        cbo_efectos = ctk.CTkComboBox(frame_configurar_grafico)
+        cbo_efectos = ctk.CTkComboBox(frame_configurar_grafico,button_color=config.COLOR_FONDO_BOTON)
         cbo_efectos.grid(row=1, column=2, sticky="nsew")
 
         # Frame de impresión
-        frame_imprimir = ctk.CTkFrame(header_hijo)
+        frame_imprimir = ctk.CTkFrame(header_hijo,fg_color=config.COLOR_FONDO_BOTON)
         frame_imprimir.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
 
-        btn_vertical = ctk.CTkButton(frame_imprimir, text="Ver Vertical")
+        btn_vertical = ctk.CTkButton(frame_imprimir, text="Ver Vertical",fg_color=config.COLOR_FONDO_BOTON)
         btn_vertical.pack(fill="x", pady=(0, 10))
 
-        btn_imprimir = ctk.CTkButton(frame_imprimir, text="Imprimir como PDF")
+        btn_imprimir = ctk.CTkButton(frame_imprimir, text="Imprimir como PDF",fg_color=config.COLOR_FONDO_BOTON)
         btn_imprimir.pack(fill="x")
 
         
          # Frame principal (panel)
-        panel = ctk.CTkFrame(self.tab3, fg_color="#e90078")
+        panel = ctk.CTkFrame(self.tab3, fg_color=config.COLOR_FONDO)
         panel.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Tabview (dashboard) en el panel, 
-        self.dashboard = ctk.CTkTabview(panel)
+        self.dashboard = ctk.CTkTabview(panel,fg_color=config.COLOR_FONDO)
         self.dashboard.pack(side="left", fill="both", expand=True)
 
         # Menú lateral (panel_graficos) a la derecha
-        menu_lateral = ctk.CTkTabview(panel,fg_color="#ff9eb4")
+        menu_lateral = ctk.CTkTabview(panel,fg_color=config.COLOR_FONDO)
         menu_lateral.pack(side="right", fill="y", padx=(10, 0), pady=10)
 
         hoja_grafico = menu_lateral.add("Gráficos")
         hoja_formato = menu_lateral.add("Formato")
 
-        panel_graficos = ctk.CTkFrame(hoja_grafico, fg_color="#e96a00")
+        panel_graficos = ctk.CTkFrame(hoja_grafico, fg_color=config.COLOR_FONDO)
         panel_graficos.pack(fill="both",  pady=10,expand=True)
 
-        panel_formato = ctk.CTkFrame(hoja_formato,fg_color="#e96a00")
+        panel_formato = ctk.CTkFrame(hoja_formato,fg_color=config.COLOR_FONDO)
         panel_formato.pack(fill="both",expand=True)
 
-        cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color="#88001f")
+        cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color=config.COLOR_FONDO_BOTON)
         cuadro_iconos.pack(pady=(0,20))
 
         cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color="#88001f")
@@ -1654,7 +1694,6 @@ class App(ctk.CTk):
     def aplicar_cambios(self):
         if self.df is None:
             messagebox.showinfo("No hay tabla","Debe cargar una tabla para guardarla en bbdd")
-        
         nombre_tabla = self.table_name
         try:
              
@@ -1710,3 +1749,37 @@ class App(ctk.CTk):
                         font=("Arial", 10, "bold"))
 
 
+    def aplicar_cambios(self):
+        pop_nombrar_table = ctk.CTkToplevel(self)
+        pop_nombrar_table.title("Especifica Tabla")
+        
+        ctk.CTkLabel(
+            master=pop_nombrar_table,
+            text="Nuevo Nombre"
+            ).grid(row=1,column=0,padx=(10,10),pady=(10,10))
+        
+        txt_new_name = ctk.CTkEntry(
+            master=pop_nombrar_table
+        )
+        txt_new_name.grid(row=1,column=1,padx=(10,10))
+        
+        check_var = tk.BooleanVar()
+        ctk.CTkCheckBox(pop_nombrar_table,
+                        text="En la misma tabla",
+                        variable=check_var
+        ).grid(row=2,column=0,columnspan=2,padx=(10,10),pady=(10,10))
+        
+        
+        ctk.CTkButton(pop_nombrar_table,
+            text="Guardar en BBDD",
+            command= lambda: self.save_table(
+                check_var.get(),
+                txt_new_name.get())
+        ).grid(row=4,column=0,columnspan=2,padx=(10,10),pady=(10,10))   
+    
+    
+    def save_table(self,check_var,new_name):
+ 
+        if check_var == False:
+            self.table_name = new_name
+        self.aplicar_cambios()
