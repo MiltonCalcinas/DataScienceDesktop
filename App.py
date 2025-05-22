@@ -60,7 +60,7 @@ class App(ctk.CTk):
 
         
         self.url_csv = None
-        self.url_csv = None
+        self.url_excel = None
         self.df = None
         self.result_statistics = []
         self.graph_widgets = {}
@@ -163,7 +163,7 @@ class App(ctk.CTk):
         for i, tipo in enumerate(options):
             btn = ctk.CTkButton(pop_load_data,
                         text=tipo,
-                        command=lambda t=tipo: self.__ventana_conexion(t),
+                        command=lambda t=tipo: self.__ventana_conexion(t,pop_load_data),
                         fg_color=config.COLOR_FONDO_BOTON
                         )
             btn.grid(row=i+1, column=0, padx=20, pady=10)
@@ -958,7 +958,7 @@ class App(ctk.CTk):
             return None
 
 
-    def __solicitud_post_csv(self,encoding,sep,table_name):
+    def importar_from_csv(self,encoding,sep,table_name):
         
         if self.url_csv is None or encoding == "" or sep == "":
             messagebox.showerror("Campos Invalidos para la Transformación", "Por favor, completa todos los campos obligatorios.")
@@ -972,43 +972,26 @@ class App(ctk.CTk):
             self.table_name_list.append(table_name)
             print("---saving table name")
             self.post_table_name(table_name)
+            self.table_name = table_name
 
-        print("--- solicitar post csv")
-        print("--datos: ",self.url_csv,encoding,sep)
-        with open(self.url_csv,"rb") as f:
-            files = {'file': f}
-            data = {
-                "fuente": "csv",
-                "encoding": encoding,
-                "sep" : sep                
-            }
 
-            
-            try:
-                response = requests.post(
-                    config.VIEW_CARGAR_DATOS,
-                    data= data,
-                    files=files,
-                    
-                )
-                if response.ok :
-                    print("✅",response.json())
-                   
-                    print("--- mostrando tabla csv")
-                    self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
-                    self.show_tree_viewport()
-                    self.form.destroy()
-                    
-
-                else:
-                    print("❌ Error",response.text)
-            except Exception as ex:
-                print("❌ Excepción",ex)
-
+        try:
+            print("--- Mostrando tabla csv")
+            self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
+            self.guardar_en_bbdd()
+            self.show_tree_viewport()
+        except Exception as ex:
+            print("Error al importar CSV",ex)
+            messagebox.showerror(
+                title="Error al Importar CSV",
+                message=ex
+            )
+        self.form.destroy()
+        
 
         
 
-    def __solicitud_post_excel(self,sheet_name,table_name):
+    def importar_from_excel(self,sheet_name,table_name):
         
         if self.url_excel is None or sheet_name=="" :
             messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos y establece la Hoja.")
@@ -1022,38 +1005,28 @@ class App(ctk.CTk):
             print("--- post guardar nombre de tabla---")
             self.table_name_list.append(table_name)
             self.post_table_name(table_name)
-        
+            self.table_name = table_name
         print("--- solicitar post excel")
         print("--datos: ",self.url_excel)
         print("Nombre hoja:",sheet_name)
 
-        with open(self.url_excel,"rb") as f:
-            files = {'file': f}
-            data = {
-                "fuente": "excel",
-                "sheet_name":sheet_name,
-            }
-            try:
-                response = requests.post(
-                    config.VIEW_CARGAR_DATOS,
-                    data= data,
-                    files=files
-
-                )
-                if response.ok :
-                    print("✅",response.json())
-                    self.form.destroy()
-                    print("--- mostrando datos en tabla")
-                    self.df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
-                    self.show_tree_viewport()
+        try:
+            self.df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
+            self.guardar_en_bbdd()
+            self.show_tree_viewport()
+            
+        except Exception as ex:
+            print("Error al importar Excel:",ex)
+            messagebox.showerror(
+                title="Error importar Excel",
+                message=ex
+            )
+        self.form.destroy()
                     
 
-                else:
-                    print("❌ Error",response.text)
-            except Exception as ex:
-                print("❌ Excepción",ex)
 
-    def __solicitud_post_conexion_db(self,**kwargs):
+
+    def importar_from_bbdd(self,**kwargs):
         for value in kwargs.values():
             if value == "" or value == None:
                 messagebox.showwarning("Campos requeridos","Por favor, Completa los paramtros de la conexion.")
@@ -1064,41 +1037,47 @@ class App(ctk.CTk):
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
         else:
+
             print("--- post guardar nombre de tabla---")
             self.table_name_list.append(table_name)
             self.post_table_name(table_name)
-        data = {
-            "fuente": "SGBD",
-            "SGBD":kwargs["SGBD"],
-            "nombre_tabla": kwargs["nombre_tabla"],
-            "usuario_db": kwargs["usuario_db"],
-            "password_db": kwargs["password_db"],
-            "db": kwargs["db"],
-            "host": kwargs["host"],
-            "puerto": kwargs["puerto"],
-            "consulta": kwargs["consulta"]
+            self.table_name = table_name
+
+        sgbd_ = kwargs["SGBD"]
+        nombre_tabla =  kwargs["nombre_tabla"]
+        usuario = kwargs["usuario_db"]
+        password = kwargs["password_db"]
+        db = kwargs["db"]
+        host = kwargs["host"]
+        puerto = kwargs["puerto"]
+        consulta = kwargs["consulta"]
+        vars_conexion = {
+            "MySQL": lambda user, password, db, host, port: f"mysql+pymysql://{user}:{password}@{host}:{port}/{db}",
+            "PostgreSQL": lambda user, password, db, host, port: f"postgresql://{user}:{password}@{host}:{port}/{db}",
+            "SQLServer": lambda user, password, db, host, port: f"mssql+pyodbc://{user}:{password}@{host},{port}/{db}?driver=ODBC+Driver+17+for+SQL+Server",
         }
-
-        print("--- Enviando credenciales para que el servidor obtenga la tabla")
-
-
         try:
-            response = requests.post(
-                config.VIEW_CARGAR_DATOS,
-                data=json.dumps(data),
-                headers= {'Content-Type': 'application/json'}
-            )
-            if response.ok:
-                self.form.destroy()
-                self.df = pd.DataFrame(response.json()) 
-                print("✅")
-                
-                self.show_tree_viewport()    
-            else:
-                print("❌ Error", response.text)
-                
+            str_engine = vars_conexion[sgbd_](usuario, password, db,host,puerto)
+            print("engine",str_engine)
+            engine = sqlalchemy.create_engine(str_engine)
+            self.df = pd.read_sql(consulta,engine)
+            self.guardar_en_bbdd()
+            self.show_tree_viewport()
+            
         except Exception as ex:
-            print("❌ Excepción", ex)
+            print(f"Error Importar mediante Conexion con bbdd {sgbd_}",ex) 
+            messagebox.showerror(
+                title="Error Conexion",
+                message=ex
+            )          
+        finally:
+            if engine is not None:
+                engine.dispose()
+
+                
+            
+        self.form.destroy()
+                
 
     def __guardar_url_csv(self,txt_file):
         
@@ -1130,11 +1109,14 @@ class App(ctk.CTk):
 
 
 
-    def __ventana_conexion(self,tipo_bbdd):
+    def __ventana_conexion(self,tipo_bbdd,padre = None):
         print("--- La fuente de datos seleccionada es :",tipo_bbdd)
         
         if tipo_bbdd == "-- Ninguna":
             return
+        
+        if padre is not None:
+            padre.destroy()
         
         self.form = ctk.CTkToplevel(self)
         
@@ -1172,7 +1154,7 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=lambda:self.__solicitud_post_excel(
+                                       command=lambda:self.importar_from_excel(
                                             txt_sheet_name.get(),
                                             txt_table_name.get())
                                             )
@@ -1210,10 +1192,11 @@ class App(ctk.CTk):
             
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=lambda: self.__solicitud_post_csv(
-                                                                                 txt_encoding.get(),
-                                                                                 txt_sep.get(),
-                                                                                 txt_table_name.get()))
+                                       command=lambda: self.importar_from_csv(
+                                                                        txt_encoding.get(),
+                                                                        txt_sep.get(),
+                                                                        txt_table_name.get())
+                                                            )
             
             btn_enviar.grid(row=4,column=1,pady=(10,10),padx=(0,50))
 
@@ -1256,7 +1239,7 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=lambda: self.__solicitud_post_conexion_db(
+                                       command=lambda: self.importar_guardar_bbdd(
                                            nombre_tabla = txt_nombre_tabla.get(),
                                            usuario_db=txt_user.get(),
                                            password_db=txt_password.get(),
@@ -1374,9 +1357,10 @@ class App(ctk.CTk):
         
 
         btn_aplicar = ctk.CTkButton(header_hijo,
-                                    command=self.aplicar_cambios,
+                                    command=self.guardar_en_bbdd,
                                     text="Aplicar",
-                                    fg_color=config.COLOR_FONDO_BOTON)
+                                    fg_color = config.COLOR_FONDO_BOTON
+                                    )
         btn_aplicar.grid(row=1,column=4,padx=(5,10),sticky="nsew")
 
         frame_tabla = ctk.CTkFrame(self.tab1,height=400,fg_color="#96fba4")
@@ -1691,7 +1675,8 @@ class App(ctk.CTk):
         frame_movil = MovableResizableFrame(hojas_frame_)
         frame_movil.place(x=100,y=100)
 
-    def aplicar_cambios(self):
+    def guardar_en_bbdd(self):
+        print("--- Guardar cambios----")
         if self.df is None:
             messagebox.showinfo("No hay tabla","Debe cargar una tabla para guardarla en bbdd")
         nombre_tabla = self.table_name
@@ -1712,9 +1697,16 @@ class App(ctk.CTk):
 
             print(f"DataFrame guardado en la base de datos '{db_name}'")
             print("Saliendo de funcion datos> crear_db_clientes()")
-
+            messagebox.showinfo(
+                title="Exito",
+                message="Cambios Aplicados correctamente"
+            )
         except Exception as ex:
             print(ex)
+            messagebox.showerror(
+                title="Error",
+                message=ex
+            )
 
     def buscar_imagen(self):
         cbo_imagen = filedialog.askopenfilename(
@@ -1749,37 +1741,6 @@ class App(ctk.CTk):
                         font=("Arial", 10, "bold"))
 
 
-    def aplicar_cambios(self):
-        pop_nombrar_table = ctk.CTkToplevel(self)
-        pop_nombrar_table.title("Especifica Tabla")
-        
-        ctk.CTkLabel(
-            master=pop_nombrar_table,
-            text="Nuevo Nombre"
-            ).grid(row=1,column=0,padx=(10,10),pady=(10,10))
-        
-        txt_new_name = ctk.CTkEntry(
-            master=pop_nombrar_table
-        )
-        txt_new_name.grid(row=1,column=1,padx=(10,10))
-        
-        check_var = tk.BooleanVar()
-        ctk.CTkCheckBox(pop_nombrar_table,
-                        text="En la misma tabla",
-                        variable=check_var
-        ).grid(row=2,column=0,columnspan=2,padx=(10,10),pady=(10,10))
-        
-        
-        ctk.CTkButton(pop_nombrar_table,
-            text="Guardar en BBDD",
-            command= lambda: self.save_table(
-                check_var.get(),
-                txt_new_name.get())
-        ).grid(row=4,column=0,columnspan=2,padx=(10,10),pady=(10,10))   
+
     
-    
-    def save_table(self,check_var,new_name):
- 
-        if check_var == False:
-            self.table_name = new_name
-        self.aplicar_cambios()
+
