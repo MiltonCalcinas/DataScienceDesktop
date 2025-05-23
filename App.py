@@ -18,6 +18,8 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from login import Login
+import operator
+import pandas.api.types as ptypes
 
 
 def verificar_sesion_guardada():
@@ -233,7 +235,7 @@ class App(ctk.CTk):
         self.filter_widgets = []  # para almacenar widgets por fila
 
         scroll_frame = ctk.CTkScrollableFrame(self.pop_filter, width=600, height=300)
-        scroll_frame.grid(row=0, column=0, padx=10, pady=10)
+        scroll_frame.grid(row=0, column=0,columnspan=3, padx=10, pady=10)
         scroll_frame.configure(fg_color=config.COLOR_FONDO)
         self.scroll_frame = scroll_frame  # guardamos referencia
 
@@ -245,6 +247,17 @@ class App(ctk.CTk):
 
         ctk.CTkButton(self.pop_filter, text="Filtrar", command=self.exe_filter,
                       fg_color=config.COLOR_FONDO_BOTON).grid(row=2, column=0, padx=(0, 20), pady=(0, 20))
+        
+        ctk.CTkButton(self.pop_filter, text="Filtrar y Guardar", command=lambda :self.exe_filter(save=True),
+                      fg_color=config.COLOR_FONDO_BOTON).grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
+        
+        ctk.CTkButton(self.pop_filter, text="Descartar Filtros", command=self.descartar_filtro,
+                      fg_color=config.COLOR_FONDO_BOTON).grid(row=2, column=2, padx=(0, 20), pady=(0, 20))
+    
+    def descartar_filtro(self):
+        self.pop_filter.destroy()
+        self.show_tree_viewport()
+
 
     def add_variable_filter(self):
         fila = self.filter_row
@@ -265,9 +278,12 @@ class App(ctk.CTk):
         def actualizar_operadores(opcion):
             tipo = self.df[opcion].dtype
             if pd.api.types.is_numeric_dtype(tipo):
-                operadores = [">", "<", "=", ">=", "<="]
-            else:
-                operadores = ["=", "!=", "comienza por", "termina por"]
+                operadores = [">", "<", "==", ">=", "<=","No NaN"]
+            elif self.df[opcion].dtype == 'object':
+                operadores = ["==", "!=", "contiene","comienza por", "termina por","está en","No NaN","No vacios"]
+            elif ptypes.is_datetime64_any_dtype(self.df[opcion]):
+                operadores = [">", "<", "==", ">=", "<=","por día","por mes","por año","No NaT"]
+            
             cbo_operador.configure(values=operadores,button_color=config.COLOR_FONDO_BOTON)
             cbo_operador.set(operadores[0])  # seleccionar por defecto el primero
 
@@ -278,58 +294,114 @@ class App(ctk.CTk):
         self.filter_row += 1
 
 
-    def exe_filter(self):
-        try:
-            condiciones = []
+    def exe_filter(self,save=False):
 
-            for cbo_col, cbo_op, entry_val in self.filter_widgets:
-                col = cbo_col.get()
-                op = cbo_op.get()
-                val = entry_val.get()
+        operadores_num = {
+            '>': operator.gt,
+            '<': operator.lt,
+            '>=': operator.ge,
+            '<=': operator.le,
+            '==': operator.eq,
+            '!=': operator.ne,
+        }
+        self.df_filtrado = self.df.copy()
+        for cbo_col, cbo_op, entry_val in self.filter_widgets:
+            col = cbo_col.get()
+            op = cbo_op.get()
+            val = entry_val.get()
 
-                if col == "" or op == "" or val == "":
-                    continue  # saltar si está vacío
-
-                tipo = self.df[col].dtype
-
-                if pd.api.types.is_numeric_dtype(tipo):
-                    try:
-                        val_num = float(val)
-                        condiciones.append(f"`{col}` {op} {val_num}")
-                    except ValueError:
-                        messagebox.showerror("Error", f"'{val}' no es un número válido para la columna '{col}'")
-                        return
-                else:
-                    if op == "=":
-                        condiciones.append(f"`{col}` == '{val}'")
-                    elif op == "!=":
-                        condiciones.append(f"`{col}` != '{val}'")
-                    elif op == "comienza por":
-                        condiciones.append(f"@self.df['{col}'].str.startswith('{val}')")
-                    elif op == "termina por":
-                        condiciones.append(f"@self.df['{col}'].str.endswith('{val}')")
-
-            if not condiciones:
-                messagebox.showwarning(title="Aviso", message="No se han definido filtros.")
+            if col not in self.df_filtrado.columns:
+                messagebox.showwarning("Columna No existente",f"La columna {col}no existe. Filtro Cancelado")
+                print("Columna No existente",f"La columna {col}no existe. Filtro Cancelado")
                 return
-
-            query_str = " & ".join(condiciones)
-
-            if any("startswith" in f or "endswith" in f for f in condiciones):
-                df_filtrado = self.df[eval(query_str)]
+            
+            
+            if col == "" or op == "" or val == "":
+                    continue  # saltar si está vacío
+            tipo = self.df_filtrado[col].dtype
+            if pd.api.types.is_numeric_dtype(tipo):
+                try:
+                    val_num = float(val)
+                    if op == "No NaN":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].notna()] 
+                    elif op in operadores_num:
+                        
+                        self.df_filtrado = self.df_filtrado[operadores_num[op](self.df_filtrado[col], val_num)]
+                    else:
+                        messagebox.showerror("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        print("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        return
+                except ValueError:
+                    messagebox.showerror("Error", f"'{val}' no es un número válido para la columna '{col}'.Filtro Cancelado")
+                    print("Error", f"'{val}' no es un número válido para la columna '{col}'.Filtro Cancelado")
+                    return
+            elif self.df_filtrado[col].dtype == 'object':
+                try:
+                    if op == "==":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col]== val]
+                    elif op == "!=":                        
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col]!= val]
+                    elif op == "comienza por":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].str.startswith(val)]
+                    elif op == "termina por":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].str.endswith(val)]
+                    elif op == "contiene":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].str.contains(val)]
+                    elif op == "está en":
+                        list_val = [ valor.replace(" ","") for valor in val.split(",")]
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].isin(list_val)]
+                    elif op == "No NaN": 
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].notna()] 
+                    elif op == "No vacios":
+                        self.df_filtrado = self.df_filtrado[ self.df_filtrado[col] != ""] 
+                    else:
+                        messagebox.showerror("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        print("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        return
+                except Exception as ex:
+                    messagebox.showerror("Error",f"Eror al filtrar columna Object.{col} .Filtro Cancelado")
+                    print("Error",f"Eror al filtrar columna Object.{col}")
+                    return
+            elif ptypes.is_datetime64_any_dtype(self.df_filtrado[col]):
+                try:
+                    if op == "==":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col]==  pd.to_datetime(val)]
+                    elif op == "!=":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col]!=pd.to_datetime(val)]
+                    elif op == "<" or "<=" or ">" or ">=":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col]< val]
+                    elif op == "por día":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].dt.day == int(val)]
+                    elif op == "por mes":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].dt.month == int(val)]
+                    elif op == "por año":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].dt.year == int(val)]
+                    elif op == "No NaT":
+                        self.df_filtrado = self.df_filtrado[self.df_filtrado[col].notna()]
+                    else:
+                        messagebox.showerror("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        print("Operador No valido",f"Se ha seleccionado {op} que no es valido para{col}. Filtro Cancelado")
+                        return 
+                except Exception as ex:
+                    messagebox.showerror("Error",f"Eror al filtrar columna Datetime.{col}.Filtro Cancelado")
+                    print("Error",f"Eror al filtrar columna Object.{col}.Filtro Cancelado")
+                    return
             else:
-                df_filtrado = self.df.query(query_str)
+                messagebox.showinfo("Tipo","El tipo de la columna no es numérica,object u datetime. Filtro Cancelado",col)
+                print("Tipo","El tipo de la columna no es numérica,object u datetime. Filtro Cancelado")
+                return
+        self.show_tree_viewport(copia=True)
+        msg_save = ""
+        if save:
+            self.df = self.df_filtrado
+            msg_save = " y guardado."
 
-            # Aquí puedes usar el DataFrame filtrado, por ejemplo:
-            print(df_filtrado)
-
-        except Exception as e:
-            messagebox.showerror(title="Error al filtrar", message=str(e))
-
+        self.pop_filter.destroy()
+        messagebox.showinfo("Filtrado",f"Filtrado {msg_save} correctamente")
 
     def top_level_params_ANO(self,metodo):
         
-        if metodo == "-- Ninguna":
+        if metodo == "-- Ninguna": 
             self.cbo_ANO.set("A. No Superivosado")
             return
         top = ctk.CTkToplevel(self)
@@ -380,9 +452,9 @@ class App(ctk.CTk):
                 print(f"KMeans con columnas {columnas_seleccionadas} y {n_clusters} clusters")
                 
                 # Llama aquí a tu función de KMeans con esos parámetros
-                df_filtrado = self.df[columnas_seleccionadas]
+                df_select = self.df[columnas_seleccionadas]
                 modelo_kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-                self.df['cluster'] = modelo_kmeans.fit_predict(df_filtrado)
+                self.df['cluster'] = modelo_kmeans.fit_predict(df_select)
                 print("Clustering completado. Nuevas etiquetas guardadas en 'cluster'.")
                 
 
@@ -390,9 +462,9 @@ class App(ctk.CTk):
                 n_components = int(n_components_entry.get())
                 print(f"PCA con columnas {columnas_seleccionadas} y {n_components} componentes")
                 # Llama aquí a tu función de PCA con esos parámetros
-                df_filtrado = self.df[columnas_seleccionadas]
+                df_select = self.df[columnas_seleccionadas]
                 pca = PCA(n_components=n_components)
-                componentes = pca.fit_transform(df_filtrado)
+                componentes = pca.fit_transform(df_select)
 
                 # Guardar cada componente como nueva columna
                 for i in range(n_components):
@@ -472,7 +544,7 @@ class App(ctk.CTk):
         variable_conversion.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=config.COLOR_FONDO_BOTON)
         variable_column.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",button_color=config.COLOR_FONDO_BOTON)
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",fg_color=config.COLOR_FONDO_BOTON)
         chk_column.grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
 
         # Guardar los widgets en una lista
@@ -480,15 +552,46 @@ class App(ctk.CTk):
 
         self.conversion_row += 1
     def __conversion(self):
+      
         for i, (variable_conversion, variable_column, chk_column) in enumerate(self.filas_conversion):
             tipo_conversion = variable_conversion.get()
             columna = variable_column.get()
-            usar_misma = chk_column.get()  # Retorna 1 si está marcado, 0 si no
-
+            usar_misma = chk_column.get()
             print(f"Fila {i+1}:")
             print(f"  Tipo conversión: {tipo_conversion}")
             print(f"  Columna: {columna}")
             print(f"  ¿Misma columna?: {'Sí' if usar_misma else 'No'}")
+            try:
+                nueva_columna = columna if usar_misma else f"{columna}_convertido"
+
+                if tipo_conversion == "Texto a Número (int)":
+                    self.df[nueva_columna] = pd.to_numeric(self.df[columna], errors="coerce").astype("Int64")
+                elif tipo_conversion == "Texto a Número (float)":
+                    self.df[nueva_columna] = pd.to_numeric(self.df[columna], errors="coerce")
+                elif tipo_conversion == "Texto a Fecha (datatime)":
+                    self.df[nueva_columna] = pd.to_datetime(self.df[columna], errors="coerce")
+                elif tipo_conversion == "Texto a Categoría":
+                    self.df[nueva_columna] = self.df[columna].astype("category")
+                elif tipo_conversion == "Número a Texto":
+                    self.df[nueva_columna] = self.df[columna].astype(str)
+                elif tipo_conversion == "Fecha a Texto":
+                    self.df[nueva_columna] = self.df[columna].astype(str)
+                elif tipo_conversion == "Número (float) a Número (int)":
+                    self.df[nueva_columna] = self.df[columna].astype("Int64")
+                elif tipo_conversion == "Número (int) a Número (float)":
+                    self.df[nueva_columna] = self.df[columna].astype(float)
+                else:
+                    messagebox.showwarning("Conversión no implementada", f"La conversión '{tipo_conversion}' no está implementada.")
+                    print(f"⚠ Conversión no implementada: {tipo_conversion}")
+                    continue
+
+                print(f"✔ Conversión realizada: {columna} → {nueva_columna} ({tipo_conversion})")
+
+            except Exception as e:
+                print(f"❌ Error al convertir la columna '{columna}': {e}")
+                messagebox.showerror("Error de conversión", f"No se pudo convertir la columna '{columna}':\n{e}")
+
+        self.show_tree_viewport()
 
 
     def __calculate_statistics(self):
@@ -1313,7 +1416,8 @@ class App(ctk.CTk):
                                           "Columna3",
                                           "-- Ninguna"
                                            ],
-                                           button_color=config.COLOR_FONDO_BOTON)
+                                           button_color=config.COLOR_FONDO_BOTON,
+                                           command=self.variable_dependiente)
         self.cbo_variable_dependiente.grid(row=0,column=4,padx=(5,10),sticky="nsew",pady=(0,10))
         self.cbo_variable_dependiente.set("Variable Dependiente")
 
@@ -1382,15 +1486,31 @@ class App(ctk.CTk):
         scroll_x.config(command=self.tree.xview)
         self.tree.pack(padx=20, pady=20, fill="both", expand=True)
     
-    def show_tree_viewport(self):
+    def variable_dependiente(self,value):
+        if self.df is None:
+            messagebox.showerror("Error","No ha importado tabla")
+            return
+        if value not in self.df.columns:
+            messagebox.showerror("Error","Variable no presente en la tabla")
+            return
+        self.y = value
+
+
+    def show_tree_viewport(self,copia=False):
         print("--- Renderizando tabla df")
-        self.df.info()
+        if copia:
+            df = self.df_filtrado
+        else:
+            df = self.df
+        df.info()
+
+
         # tree 
-        self.tree["columns"] = list(self.df.columns)
-        self.cbo_variable_dependiente.configure(values=list(self.df.columns))
+        self.tree["columns"] = list(df.columns)
+        self.cbo_variable_dependiente.configure(values=list(df.columns))
 
         # encambezado (cols)
-        for col in self.df.columns:
+        for col in df.columns:
             self.tree.heading(col,text=col.capitalize())
             self.tree.column(col, anchor="center")
         
@@ -1399,7 +1519,7 @@ class App(ctk.CTk):
             self.tree.delete(row)
         
         # Insertar datos (50 primeras filas)
-        for vector in self.df.values[:50]:
+        for vector in df.values[:50]:
             self.tree.insert("","end",values=tuple(vector))
 
 
