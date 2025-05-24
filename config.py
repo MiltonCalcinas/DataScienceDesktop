@@ -4,7 +4,4 @@ VIEW_SAVE_TABLE_NAME = "http://localhost:8000/api/save_tabla_name/"
 VIEW_LAST_TABLE = "http://localhost:8000/api/last_table/"
 VAR_CONEXION = "mysql+mysqlconnector://cliente:cliente1234@localhost/"
 VIEW_TABLE_NAME_LIST = "http://127.0.0.1:8000/api/table_name/"
-COLOR_FONDO = "#E7ECEF"
-COLOR_LETRA_NEGRITA = "#0F7173"
-COLOR_LETRA_NORMAL = "#272932"
-COLOR_FONDO_BOTON = "#D8A47F"
+
