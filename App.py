@@ -30,7 +30,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
 
-def verificar_sesion_guardada():
+def sesion_guardada():
     print("---Verificndo auth_token---")
     if os.path.exists("session.json"):
         print("Tiene sesion guardada")
@@ -38,7 +38,7 @@ def verificar_sesion_guardada():
             session = json.load(f)
 
         token = session.get("auth_token")
-
+        print("Tocken auth se sesion anterior:",token)
         if token:
             # Validamos el token con el backend
             print("validando el token")
@@ -48,7 +48,7 @@ def verificar_sesion_guardada():
 
             if res.status_code == 200:
                 print("--- Servidor: ",res.json())
-                
+                print("Token validado(✅)")
                 return True  # El token sigue siendo válido
     print("No tiene sesion guardada ")
     return False
@@ -82,17 +82,40 @@ class App(ctk.CTk):
 
         
         # Inicia sesión
-        if not  verificar_sesion_guardada():
+        sesion = sesion_guardada()
+        if sesion:
+            with open("session.json", "r") as f:
+                s = json.load(f)
+            self.auth_token = s.get("auth_token")
+            self.get_table_name_list()
+            self.try_load_data_from_mysql()
+        else:
             print("Abriendo login")
             login = Login(self)  # le pasas la ventana padre
             login.grab_set()     # hace modal (no permite usar otras ventanas)
             self.wait_window(login)  # bloquea hasta que login se cierre
+            
+            if not hasattr(self,'auth_token'):
+                self.destroy()
+                return  
+            
             if not login.is_new_user:
                 self.get_table_name_list()
                 self.try_load_data_from_mysql()
+            else:
+                self.create_pop_load_data()
+        
+
+        self.mainloop()
                 
             
     def get_table_name_list(self):
+        if hasattr(self, 'auth_token'):
+            print("Sí tiene el atributo 'auth_token'")
+        else:
+            print("No tiene el atributo 'auth_token'")
+            return
+        
 
         headers = {
             "Authorization": f"Token {self.auth_token}"
@@ -113,7 +136,11 @@ class App(ctk.CTk):
 
 
     def try_load_data_from_mysql(self):
-        
+        if hasattr(self, 'auth_token'):
+            print("Sí tiene el atributo 'auth_token'")
+        else:
+            print("No tiene el atributo 'auth_token'")
+            return
         print("Token en App: ",self.auth_token)
         headers = {
             "Authorization": f"Token {self.auth_token}"
@@ -153,7 +180,6 @@ class App(ctk.CTk):
     def create_pop_load_data(self):
         pop_load_data = ctk.CTkToplevel(self)
         pop_load_data.resizable(False, False)
-        #pop_load_data.overrideredirect(True)
         pop_load_data.configure(fg_color=config.COLOR_FONDO)
 
         # Mostrar en primer  plano
@@ -1051,6 +1077,7 @@ class App(ctk.CTk):
 
 
     def post_table_name(self,table_name):
+        
         url = config.VIEW_SAVE_TABLE_NAME
         headers = {
             "Authorization": f"Token {self.auth_token}",
@@ -1064,6 +1091,7 @@ class App(ctk.CTk):
             response = requests.post(url, headers=headers, json=payload)
             if response.status_code == 201:
                 print("✅ Tabla guardada con éxito:", response.json())
+                self.db_name = response.json()['db_name']
                 return response.json()
             else:
                 print(f"❌ Error al guardar tabla: {response.status_code} - {response.text}")
