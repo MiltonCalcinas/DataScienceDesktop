@@ -12,7 +12,7 @@ class MovableResizableFrame(ctk.CTkFrame):
         self.bind("<B1-Motion>", self._on_drag_motion)
 
         # Inicializar el tamaño del frame
-        self._resize_data = {"width": 200, "height": 150}
+        self._resize_data = {"width": 300, "height": 250}
         self.configure(width=self._resize_data["width"], height=self._resize_data["height"])
 
     def _on_drag_start(self, event):
@@ -35,6 +35,7 @@ class MovableResizableFrame(ctk.CTkFrame):
         new_width = int(width_percentage * 500)  # Ajusta el valor máximo según lo desees
         self.configure(width=new_width)
         self._resize_data["width"] = new_width
+
 
 
 # Crear la ventana principal

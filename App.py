@@ -1586,7 +1586,9 @@ class App(ctk.CTk):
         # Insertar datos (50 primeras filas)
         for vector in df.values[:50]:
             self.tree.insert("","end",values=tuple(vector))
-
+        # actualizaciones
+        self.cbo_var_y.configure(values=list(self.df.columns))
+        self.cbo_var_x.configure(values=list(self.df.columns))
 
     def crear_entrenamiento(self):
         header_padre = ctk.CTkFrame(self.tab2,fg_color=config.COLOR_FONDO,corner_radius=10, border_width=2, border_color="#8888aa")
@@ -1797,6 +1799,7 @@ class App(ctk.CTk):
         menu_lateral = ctk.CTkTabview(panel,fg_color=config.COLOR_FONDO)
         menu_lateral.pack(side="right", fill="y", padx=(10, 0), pady=10)
 
+        
         hoja_grafico = menu_lateral.add("Gráficos")
         hoja_formato = menu_lateral.add("Formato")
 
@@ -1841,29 +1844,35 @@ class App(ctk.CTk):
         my_ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(30,30)) 
 
         # Agregar Iconos de Gráficos
+
+        tipos_graficos = ["Barra", "Tarta", "Linea", "Dispersión", "Bigote", "Bigote por categoría"]
+
         btn_graficos = {}
-        for i in range(8):
-            btn_graficos[f"btn_{i+1}"] = ctk.CTkButton(cuadro_iconos,
-                                                    text="",
-                                                    image=my_ctk_image,
-                                                    width=10,height=10,
-                                                    command=self.crear_objeto)
-    
+        for i, tipo in enumerate(tipos_graficos):
+            btn_graficos[f"btn_{i+1}"] = ctk.CTkButton(
+                cuadro_iconos,
+                text="",
+                image=my_ctk_image,
+                width=10, height=10,
+                command=lambda t=tipo: self.crear_objeto(t)
+            )
+
         contador = 0
         for row in range(2):
             for col in range(4):
-                btn_graficos[f"btn_{contador+1}"].grid(row=row,column=col,padx=5,pady=5)
-                contador+=1
+                if f"btn_{contador+1}" in btn_graficos:
+                    btn_graficos[f"btn_{contador+1}"].grid(row=row, column=col, padx=5, pady=5)
+                contador += 1
 
         #  Agregar seleccion de Variables
         lbl_var_y = ctk.CTkLabel(cuadro_variables,text="Eje y")
         lbl_var_y.pack()
-        cbo_var_y = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"])
-        cbo_var_y.pack()
+        self.cbo_var_y = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
+        self.cbo_var_y.pack()
         lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x")
         lbl_var_x.pack()
-        cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"])
-        cbo_var_x.pack()
+        self.cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
+        self.cbo_var_x.pack()
 
         # Agregar componentes de ajustes del gráfico
         ajustes_graficos = {}
@@ -1875,6 +1884,60 @@ class App(ctk.CTk):
 
             ajustes_graficos[f"sld_{ajustes_nombre[i]}"] = ctk.CTkSlider(panel_formato)
             ajustes_graficos[f"sld_{ajustes_nombre[i]}"].grid(row=i,column=1)
+
+    def crear_objeto(self, tipo_grafico):
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+        frame_movil = MovableResizableFrame(hojas_frame_)
+        frame_movil.place(x=100, y=100)
+        frame_movil.pack_propagate(False)
+
+
+        fig, ax = plt.subplots()
+
+        # Obtener variables seleccionadas (asegúrate que estos atributos existen en tu clase)
+        var_x = self.cbo_var_x.get() if hasattr(self, "cbo_var_x") else None
+        var_y = self.cbo_var_y.get() if hasattr(self, "cbo_var_y") else None
+
+        # Control básico si no se seleccionan variables
+        if not var_x and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
+            ax.text(0.5, 0.5, "Selecciona variable X", ha="center", va="center")
+        elif not var_y and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
+            ax.text(0.5, 0.5, "Selecciona variable Y", ha="center", va="center")
+        else:
+            try:
+                if tipo_grafico == "Barra":
+                    # Ejemplo: barras de la variable Y agrupadas por X
+                    grouped = self.df.groupby(var_x)[var_y].mean()
+                    grouped.plot(kind='bar', ax=ax)
+                    ax.set_title("Gráfico de Barras")
+                elif tipo_grafico == "Tarta":
+                    # Pie con distribución de variable X
+                    counts = self.df[var_x].value_counts()
+                    ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
+                    ax.set_title("Gráfico de Tarta")
+                elif tipo_grafico == "Linea":
+                    ax.plot(self.df[var_x], self.df[var_y])
+                    ax.set_title("Gráfico de Línea")
+                elif tipo_grafico == "Dispersión":
+                    ax.scatter(self.df[var_x], self.df[var_y])
+                    ax.set_title("Gráfico de Dispersión")
+                elif tipo_grafico == "Bigote":
+                    ax.boxplot(self.df[var_y].dropna())
+                    ax.set_title("Gráfico de Caja (Bigote)")
+                elif tipo_grafico == "Bigote por categoría":
+                    categories = self.df[var_x].unique()
+                    data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
+                    ax.boxplot(data, labels=categories)
+                    ax.set_title("Bigote por Categoría")
+            except Exception as e:
+                ax.text(0.5, 0.5, f"Error:\n{str(e)}", ha="center", va="center")
+
+        self.canvas = FigureCanvasTkAgg(fig, master=frame_movil)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
+
+
 
     def __form_task(self):
         
@@ -2198,11 +2261,6 @@ class App(ctk.CTk):
 
 
 
-    def crear_objeto(self):
-        hoja = self.dashboard.get().lower().replace(" ","")
-        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
-        frame_movil = MovableResizableFrame(hojas_frame_)
-        frame_movil.place(x=100,y=100)
 
     def guardar_en_bbdd(self):
         print("--- Guardar cambios----")
