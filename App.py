@@ -20,7 +20,15 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from login import Login
 import operator
 import pandas.api.types as ptypes
-
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.svm import SVR, SVC
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
 
 def verificar_sesion_guardada():
     print("---Verificndo auth_token---")
@@ -60,10 +68,13 @@ class App(ctk.CTk):
         super().__init__(fg_color, **kwargs)
         
 
-        
+        self.model_info_list = []
+        self.contador_modelos = 0
         self.url_csv = None
         self.url_excel = None
         self.df = None
+        self.y = None
+        self.tipo_problema = None
         self.result_statistics = []
         self.graph_widgets = {}
         self.table_name_list = []
@@ -1277,7 +1288,7 @@ class App(ctk.CTk):
                                      text="⬅",
                                      width=20,
                                      command=lambda: self.__guardar_url_csv(txt_file))
-            btn_file.grid(row=0,column=2,pady=(20,10))
+            btn_file.grid(row=0,column=2,pady=(20,10),padx=(0,10))
             lbl_encoding = ctk.CTkLabel(self.form,text="encoding")
             lbl_encoding.grid(row=1,column=0,padx=(50,20),pady=(10,10),sticky="e")
             txt_encoding = ctk.CTkEntry(self.form)
@@ -1375,7 +1386,8 @@ class App(ctk.CTk):
                                                "-- Ninguna"
                                            ],
                                            command=self.__ventana_conexion,
-                                           button_color=config.COLOR_FONDO_BOTON)
+                                           button_color=config.COLOR_FONDO_BOTON,
+                                           state="readonly")
         cbo_cargar_datos.set("Fuente de Datos")
         cbo_cargar_datos.grid(row=0,column=0,padx=(10,5),sticky="nsew",pady=(0,10))
 
@@ -1398,7 +1410,8 @@ class App(ctk.CTk):
                                           "-- Ninguna"
                                            ],
                                            command= self.__transform_variables,
-                                           button_color=config.COLOR_FONDO_BOTON)
+                                           button_color=config.COLOR_FONDO_BOTON,
+                                           state="readonly")
         cbo_transform_variables.grid(row=0,column=2,padx=(5,5),sticky="nsew",pady=(0,10))
         cbo_transform_variables.set("Transformar Variables")
 
@@ -1417,7 +1430,8 @@ class App(ctk.CTk):
                                           "-- Ninguna"
                                            ],
                                            button_color=config.COLOR_FONDO_BOTON,
-                                           command=self.variable_dependiente)
+                                           command=self.variable_dependiente,
+                                           state="readonly")
         self.cbo_variable_dependiente.grid(row=0,column=4,padx=(5,10),sticky="nsew",pady=(0,10))
         self.cbo_variable_dependiente.set("Variable Dependiente")
 
@@ -1447,7 +1461,8 @@ class App(ctk.CTk):
                                           "-- Ninguna"
                                            ],
                                            command=self.top_level_params_ANO,
-                                           button_color=config.COLOR_FONDO_BOTON)
+                                           button_color=config.COLOR_FONDO_BOTON,
+                                           state="readonly")
         self.cbo_ANO.grid(row=1,column=2,padx=(5,5),sticky="nsew")
         self.cbo_ANO.set("A. No Superivosado")
         
@@ -1494,7 +1509,28 @@ class App(ctk.CTk):
             messagebox.showerror("Error","Variable no presente en la tabla")
             return
         self.y = value
+        
+        pop = ctk.CTkToplevel(self)
+        pop.title("Tipo Problema")
+        pop.resizable(False, False)
+        pop.transient(self)
+        pop.lift()
+        pop.focus_force()
+        pop.grab_set()
+        pop.update()
+        ctk.CTkLabel(pop,text="Selecciona El tipo de Problema").grid(row=0,padx=20,pady=10)
+        cbo =ctk.CTkComboBox(pop,values=["Regresion","Clasificacion"],command=self.establecer_problema,state="readonly")
+        cbo.grid(row=1,padx=20,pady=10)
+        cbo.set("Regresion")
+        
+        
 
+    def establecer_problema(self,value):
+        if value not in ["Regresion","Clasificacion"]:
+            messagebox.showerror("Error","Valor no válido. Debe ser Regresion o Clasificacion. ")
+        else:
+            self.tipo_problema =value
+            self.set_options()
 
     def show_tree_viewport(self,copia=False):
         print("--- Renderizando tabla df")
@@ -1524,61 +1560,115 @@ class App(ctk.CTk):
 
 
     def crear_entrenamiento(self):
-        header_padre = ctk.CTkFrame(self.tab2,fg_color=config.COLOR_FONDO)
+        header_padre = ctk.CTkFrame(self.tab2,fg_color=config.COLOR_FONDO,corner_radius=10, border_width=2, border_color="#8888aa")
         header_padre.pack(side="top",padx=20,pady=(20,10),fill="x")
 
-        header_hijo = ctk.CTkFrame(header_padre,fg_color=config.COLOR_FONDO)
+        header_hijo = ctk.CTkFrame(header_padre,fg_color=config.COLOR_FONDO,corner_radius=10, border_width=2, border_color="#8888aa")
         header_hijo.pack(fill="both",padx=10,pady=10)
 
-    # Configurar el grid para que se expanda
-        header_hijo.grid_rowconfigure((0,1), weight=1)  # filas 0 y 1
-        header_hijo.grid_columnconfigure((0,1,2), weight=1)  # columnas 0 y 1
-        header_hijo.grid_columnconfigure(2,weight=1,minsize=50)
-        cbo_modelo = ctk.CTkComboBox(header_hijo,
+        # Dentro de crear_entrenamiento()
+        header_hijo.grid_columnconfigure(0, weight=3)  # 30%
+        header_hijo.grid_columnconfigure(1, weight=1)  # 10%
+        header_hijo.grid_columnconfigure(2, weight=4)  # 40%
+        header_hijo.grid_columnconfigure(3, weight=2)  # 20%
+
+
+
+
+
+        self.cbo_modelo = ctk.CTkComboBox(header_hijo,
                                      values=[
                                             'Linear Regression',
                                             'Random Forest Regressor',
                                             'Decision Tree Regressor',
                                             'Svm Regressor',
                                             'Knn Regressor',
-                                            'Logistic Regression',
                                             'Random Forest Classifier',
                                             'Decision Tree Classifier',
                                             'Svm Classifier',
                                             'Knn Classifier',
                                             'Naive Bayes',
                                      ],
-                                     button_color=config.COLOR_FONDO_BOTON)
-        cbo_modelo.grid(row=0,column=0,padx=(10,5),pady=(0,10),sticky="snew")
+                                     button_color=config.COLOR_FONDO_BOTON,
+                                     state="readonly"
+                                     )
+        self.cbo_modelo.grid(row=0,column=0,padx=(10,5),pady=(0,10),sticky="snew")
+        self.cbo_modelo.set("Modelo")
+        def habilitar(value):
+            if value not in ["Grid Search CV","Randomized Search CV"]:
+                self.area_params.configure(state="normal")
+                self.area_params.delete("1.0", "end")
+                
+                self.area_params.configure(state="disabled")
 
-        cbo_tipo_busqueda = ctk.CTkComboBox(header_hijo,
+                self.spin_cv.configure(state="normal")
+                self.spin_cv.set(0)
+                self.spin_cv.configure(state="disabled")
+
+            else:
+                
+                self.spin_cv.configure(state="readonly")
+                self.spin_cv.set("cv")
+                self.area_params.configure(state="normal")
+
+        cbo_type_search = ctk.CTkComboBox(header_hijo,
                                             values=[
+                                                "-- Ninguna",
                                                 "Grid Search CV",
                                                 "Randomized Search CV"
                                             ],
-                                     button_color=config.COLOR_FONDO_BOTON)
-        cbo_tipo_busqueda.grid(row=1,column=0,padx=(10,5),sticky="snew")
+                                     button_color=config.COLOR_FONDO_BOTON,
+                                     command=habilitar,
+                                     state="readonly")
+        cbo_type_search.set("Tipo Busqueda")
+        
+        cbo_type_search.grid(row=1,column=0,padx=(10,5),sticky="snew")
+        self.spin_cv = ctk.CTkComboBox(header_hijo, values=["3"]+ [str(i) for i in range(5, 21, 5)])
 
-        area_params = ctk.CTkEntry(header_hijo,height=40,placeholder_text="Establecer Hiperparámetros (con diccionario {})")
-        area_params.grid(row=0,rowspan=2,column=1,columnspan=2,padx=(5,10),sticky="snew")
+        self.spin_cv.grid(row=0, column=1, padx=5, pady=(0,10), sticky="snew")
+        self.spin_cv.set("cv")
+        self.spin_cv.configure(state="disabled")
+        self.cbo_scoring = ctk.CTkComboBox(header_hijo,
+                                  values=[
+                                      "MSE",
+                                      "RMSE",
+                                      "MEA",
+                                      "R²",
+                                      "Accuracy",
+                                      "f1",
+                                      "ROC AUC",
+                                      "Precisión"
+                                  ],
+                                  state="readonly")
+        self.cbo_scoring.set("Scoring")
+        self.cbo_scoring.grid(row=1,column=1,padx=5,sticky="snew")
+        self.area_params = ctk.CTkTextbox(header_hijo, height=80)
+        self.area_params.insert("0.0", "Establecer Hiperparámetros (como diccionario {})")
+        self.area_params.configure(state="disabled")
+        self.area_params.grid(row=0,rowspan=2,column=2,padx=(5,5),sticky="snew")
 
         frame_btn = ctk.CTkFrame(header_hijo)
         frame_btn.grid(row=0,rowspan=2,column=3,sticky="snew")
+        
         btn_entrenar = ctk.CTkButton(frame_btn,
                                      text="Entrenar",
-                                     fg_color=config.COLOR_FONDO_BOTON
-                                     )
+                                     fg_color=config.COLOR_FONDO_BOTON,
+                                     command=lambda: self.train_model(
+                                    type_search=cbo_type_search.get(),
+                                   )
+        )
         btn_entrenar.pack(fill="x",expand=True,side="left")
-
-        frame_result = ctk.CTkFrame(self.tab2,
+        
+        self.frame_modelos = ctk.CTkFrame(self.tab2,
                                     height=400,
                                     fg_color=config.COLOR_FONDO_BOTON)
-        frame_result.pack(fill="x",side="top",pady=(10,20),padx=20)
-        btn_historial = ctk.CTkButton(frame_result,
+        self.frame_modelos.pack(fill="x",side="top",pady=(10,20),padx=20)
+        btn_historial = ctk.CTkButton(self.frame_modelos,
                                       text="Mostrar Estidisticos",
                                       command=self.mostrar_historial_estadisticas,
                                       fg_color=config.COLOR_FONDO_BOTON)
-        btn_historial.pack()
+        btn_historial.grid(row=0,column=0,padx=10,pady=10,sticky="snew")
+
 
     def crear_dashboard(self):
         # Frame principal
@@ -1762,32 +1852,316 @@ class App(ctk.CTk):
         if not hasattr(self,'form_task') or not self.form.winfo_exists():
             self.form_task()
             self.title("Crea Una Tarea")
-            # lbl_title = 
-            # txt_title=
 
-            # lbl_description
-            # lbl_description
+    def set_options(self):
+        tipo = self.df[self.y].dtype
+        if self.tipo_problema == "Regresion":
+            self.cbo_modelo.configure(values=[
+                                            'Linear Regression',
+                                            'Random Forest Regressor',
+                                            'Decision Tree Regressor',
+                                            'Svm Regressor',
+                                            'Knn Regressor',
+                                            
+            ])
+            self.cbo_scoring.configure(values=[
+                                      "MSE",
+                                      "RMSE",
+                                      "MEA",
+                                      "R²",
+            ])
+        elif self.tipo_problema=="Clasificacion":
+            self.cbo_modelo.configure(values=[
+                                            'Logistic Regression',
+                                            'Random Forest Classifier',
+                                            'Decision Tree Classifier',
+                                            'Svm Classifier',
+                                            'Knn Classifier',
+                                            'Naive Bayes',
+            ])
+            self.cbo_scoring.configure(values=[
+                                      "Accuracy",
+                                      "f1",
+                                      "ROC AUC",
+                                      "Precisión"
+            ])
+        else:
+            print("Vtipo de variable no válida")
+    def train_model(self,type_search):
+        mapear_modelos = {
+            'Linear Regression':"linear_regression",
+            'Random Forest Regressor':"random_forest_regressor",
+            'Decision Tree Regressor':"decision_tree_regressor",
+            'Svm Regressor':"svm_regressor",
+            'Knn Regressor':"knn_regressor",
+            'Logistic Regression':"logistic_regression",
+            'Random Forest Classifier':"random_forest_classifier",
+            'Decision Tree Classifier':"decision_tree_classifier",
+            'Svm Classifier':"svm_classifier",
+            'Knn Classifier':"knn_classifier",
+            'Naive Bayes':"naive_bayes",
+        }
 
-            # txt_description
-            # txt_description
+        function_models = {
+            # Regresores
+            "linear_regression": LinearRegression,
+            "random_forest_regressor": RandomForestRegressor,
+            "decision_tree_regressor": DecisionTreeRegressor,
+            "svm_regressor": SVR,
+            "knn_regressor": KNeighborsRegressor,
+            "logistic_regression": LogisticRegression,
+            "random_forest_classifier": RandomForestClassifier,
+            "decision_tree_classifier": DecisionTreeClassifier,
+            "svm_classifier": SVC,
+            "knn_classifier": KNeighborsClassifier,
+            "naive_bayes": GaussianNB,
+        }
+        if self.y == None:
+            messagebox.showwarning(
+                "Variable Dependiente",
+                "No has seleccionado ninguna variable dependiente"
+            )
+            print("Variable Dependiente","No has seleccionado ninguna variable dependiente")
+            return
+        select_model = self.cbo_modelo.get()
+        if select_model not in list(mapear_modelos.keys()):
+            messagebox.showwarning("Modelo no válido",f"El modelo seleccionado no es válido {select_model}")
+            print("Modelo no válido",f"El modelo seleccionado no es válido {select_model}")
+            return
+        
+        name_model = mapear_modelos.get(select_model)
+        model = function_models.get(name_model)
+        model = model()
 
-            # lbl_name
-            # lbl_name
+        if self.tipo_problema not in ["Regresion","Clasificacion"]:
+             messagebox.showerror("Tipo Problema",f"No has seleccionado un tipo válido: '{self.tipo_problema}'")
 
-            # txt_name
-            # txt_name
+        
+        scoring = self.cbo_scoring.get()
+        if self.tipo_problema == "Regresion" and scoring not in ["MSE", "RMSE", "MEA", "R²"]:
+            messagebox.showerror("Scoring",f"No has seleccionado scoring válido para el Regresor: '{scoring}'")
+            print("Scoring",f"No has seleccionado scoring válido: '{scoring}'")
+            return
+        elif self.tipo_problema == "Clasificacion" and scoring not in ["Accuracy", "f1", "ROC AUC", "Precisión"]:
+            messagebox.showerror("Scoring",f"No has seleccionado scoring válido: para el Clasificador '{scoring}'")
+            print("Scoring",f"No has seleccionado scoring válido: '{scoring}'")
+            return
+        else:
+            print("Scoring",f"Scoring válido: '{scoring}'")
+
+        X = self.df.drop(columns=[self.y])
+        y = self.df[self.y]
+
+        print("Shape de X:", X.shape)
+        print("Shape de y:", y.shape)
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+        # Determinar el nombre de la métrica y calcularla
+        nombre_metrica = self.cbo_scoring.get()
+        if type_search not in ["Randomized Search CV","Grid Search CV"]:
+            print("SIN busqueda de hiperparametros")
+            try:
+
+
+                print("Entrenando modelo sin hiperparametros")
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                rendimiento = mean_squared_error(y_true=y_test,y_pred=y_pred)
+
+
+                if nombre_metrica == "MSE":
+                    rendimiento = mean_squared_error(y_test, y_pred)
+                elif nombre_metrica == "RMSE":
+                    rendimiento = root_mean_squared_error(y_test, y_pred)
+                elif nombre_metrica == "MEA":
+                    rendimiento = mean_absolute_error(y_test, y_pred)
+                elif nombre_metrica == "R²":
+                    rendimiento = r2_score(y_test, y_pred)
+                elif nombre_metrica == "Accuracy":
+                    rendimiento = accuracy_score(y_test, y_pred) 
+                elif nombre_metrica == "f1":
+                    rendimiento = f1_score(y_test, y_pred, average="weighted")
+                elif nombre_metrica == "ROC AUC":
+                    try:
+                        rendimiento = roc_auc_score(y_test, model.predict_proba(X_test), multi_class="ovr")
+                    except:
+                        rendimiento = "No disponible (predict_proba no soportado)"
+                elif nombre_metrica == "Precisión":
+                    rendimiento = precision_score(y_test, y_pred, average="weighted")
+                else:
+                    rendimiento = "Métrica desconocida"
+
+                # Crear nombre del botón y ventana
+                nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                info = f"""Modelo: {select_model}
+                           \nVariable Dependiente: {self.y}
+                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
+                self.agregar_frame_modelo(nombre, info)
+                self.contador_modelos += 1
+
+                print("Rendimiento:",rendimiento)
+
+            except Exception as ex:
+                messagebox.showerror("Error",ex)
+                print(ex)
+                return
+
+        # VERIFICA QUE LOS VALORES CV Y PARAMS SEAN CORRECTOS
+        if  type_search in ["Grid Search CV","Randomized Search CV"]:
+        
+            scoring = {
+                "MSE": "neg_mean_squared_error",
+                "RMSE": "neg_root_mean_squared_error",
+                "MAE": "neg_mean_absolute_error",
+                "R²": "r2",
+                "Accuracy": "accuracy",
+                "f1": "f1",
+                "ROC AUC": "roc_auc",
+                "Precisión": "precision"
+            }.get(self.cbo_scoring.get())
+
+            cv_str = self.spin_cv.get()
+            try:
+                cv = int(cv_str)
+            except ValueError:
+                messagebox.showerror("CV", f"El valor de Validación Cruzada no es válido. Debe ser un número entero. Se obtuvo '{cv_str}'")
+                return
+            
+            import ast
+            try:
+                texto = self.area_params.get("1.0", "end-1c").strip()
+                if not texto :
+                    messagebox.showerror("Hiperparametros",f"No puede esatar vacio los hiperparamtros. Se obtuvo {texto}")
+                    print("Hiperparametros",f"No puede esatar vacio los hiperparamtros {texto}")
+                    return
+                print("Hiperparametros:")
+                print(texto)
+                params = ast.literal_eval(texto)
+                
+            except Exception as e:
+                messagebox.showerror("Error de parámetros", f"El formato de los hiperparámetros no es válido:\n{e}")
+                print("Error de parámetros", f"El formato de los hiperparámetros no es válido:\n{e}")
+                return
             
 
-            # lbl_db
-            # lbl_db
+            if type_search == "Grid Search CV":
+                print("Entrenando GridSearhCV")
+                search = GridSearchCV(
+                    estimator =model,
+                    param_grid=params,
+                    scoring=scoring,
+                    cv = cv,
+                    n_jobs=-1
+                )
+                search.fit(X_train,y_train)
 
-            # txt_db
-            # txt_db
+                y_pred = search.best_estimator_.predict(X_test)
+                if self.tipo_problema == "Regresion":
+                    rendimiento = mean_squared_error(y_true=y_test,y_pred=y_pred)
+                elif self.tipo_problema == "Clasificacion":
+                    rendimiento  = accuracy_score(y_true=y_test,y_pred=y_pred)
+                else:
+                    rendimiento = "Desconocido"
+                    
+                print("Rendimiento del mejor(Grid):",rendimiento)
+                # Crear nombre del botón y ventana
+                nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                info = f"""Modelo: {select_model}
+                           \nVariable Dependiente: {self.y}
+                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \nTipo Busqueda: {type_search}
+                           \nCV: {cv}
+                           \nMejores parametros: {search.best_params_}
+                           \nMejor score: {search.best_score_}"""
+                self.agregar_frame_modelo(nombre, info)
+                self.contador_modelos += 1
 
-            # important
+            elif type_search =="Randomized Search CV":
+                print("Entrenando RandomizedSearchCV")
+                search = RandomizedSearchCV(
+                    estimator=model,
+                    param_distributions=params,
+                    cv=cv,
+                    scoring=scoring,
+                    n_jobs=-1,
+                    random_state=42
+                )
+                search.fit(X_train,y_train)
+                y_pred = search.best_estimator_.predict(X_test)
+                rendimiento = mean_squared_error(y_true=y_test,y_pred=y_pred)
+                print("Rendimiento del mejor (Randomized):",rendimiento)
+                                # Crear nombre del botón y ventana
+                nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                info = f"""Modelo: {select_model}
+                           \nVariable Dependiente: {self.y}
+                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \nTipo Busqueda: {type_search}
+                           \nCV: {cv}
+                           \nMejores parametros: {search.best_params_}
+                           \nMejor score: {search.best_score_}"""
+                self.agregar_frame_modelo(nombre, info)
+                self.contador_modelos += 1
+
             
-            # btn_anotar
-            # btn_anotar
+    def agregar_frame_modelo(self, nombre_modelo, info_texto):
+        if not hasattr(self, 'modelo_count'):
+            self.modelo_count = len(self.frame_modelos.grid_slaves())
+
+        fila = self.modelo_count // 5
+        columna = self.modelo_count % 5
+
+        frame = ctk.CTkFrame(self.frame_modelos)
+        frame.grid(row=fila, column=columna, padx=10, pady=10, sticky="nsew")
+
+        btn_info = ctk.CTkButton(frame, text=nombre_modelo,
+                                command=lambda: self.mostrar_info_modelo(nombre_modelo, info_texto))
+        btn_info.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Asegurar que la columna se expanda proporcionalmente
+        self.frame_modelos.grid_columnconfigure(columna, weight=1)
+
+        self.modelo_count += 1
+
+    def mostrar_info_modelo(self, nombre, info):
+        ventana = ctk.CTkToplevel(self)
+        ventana.title(nombre)
+        ventana.resizable(False,False)
+        #ventana.geometry("300x200")
+        ventana.transient(self)
+        ventana.lift()
+        ventana.focus_force()
+        ventana.grab_set()
+        ventana.update()
+        
+        label = ctk.CTkLabel(ventana, text=info, justify="left", padx=10, pady=10)
+        label.pack(fill="both", expand=True)
+        
+
+    def calcular_metricas(modelo,X_test,y_test,tipo_modelo):
+        y_pred = modelo.predict(X_test)
+        print("calculadon metrica.............................................")
+
+        if tipo_modelo == "regresion":
+            mse = round(mean_squared_error(y_test, y_pred),4)
+            rmse = round(np.sqrt(mse),4)
+            r2 = round(r2_score(y_test, y_pred),4)
+            return {"mse":mse,"rmse":rmse,"R^2": r2},200
+        elif tipo_modelo == "clasificacion":
+            y_scores = modelo.predict_proba(X_test)[:,1]
+            report = classification_report(y_true= y_test,y_pred=y_pred)
+            print(report)
+            matriz_confusion = confusion_matrix(y_true=y_test,y_pred=y_pred).tolist()
+            print(matriz_confusion)
+            fpr,tpr,_ = roc_curve(y_test,y_scores)
+            auc_score = round(auc(fpr,tpr),4)
+            return {"report":report,"matriz_confusion":matriz_confusion,"auc_score": auc_score},200
+        else:
+            return {"error":"No se ha encontrado el modelo elegido"},400
+
+
 
     def crear_objeto(self):
         hoja = self.dashboard.get().lower().replace(" ","")
