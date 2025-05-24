@@ -88,8 +88,9 @@ class App(ctk.CTk):
             login.grab_set()     # hace modal (no permite usar otras ventanas)
             self.wait_window(login)  # bloquea hasta que login se cierre
             if not login.is_new_user:
-                self.try_load_data_from_mysql()
                 self.get_table_name_list()
+                self.try_load_data_from_mysql()
+                
             
     def get_table_name_list(self):
 
@@ -129,7 +130,7 @@ class App(ctk.CTk):
             self.table_name = res.json()["table_name"]
             self.db_name = res.json()["db_name"]
             print("--Conectandose a mysql para obtener la tabla")
-            engine = config.VAR_CONEXION + "/" + self.db_name
+            engine = config.VAR_CONEXION + self.db_name
             try:
                 self.df = pd.read_sql(f"SELECT * FROM {self.table_name}", engine)
                 self.show_tree_viewport()
@@ -1993,9 +1994,11 @@ class App(ctk.CTk):
 
                 # Crear nombre del botón y ventana
                 nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                predictoras = list(self.df.columns)
+                predictoras.remove(self.y)
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
-                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \nVariables Predictoras: {",".join(predictoras)}
                            \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
                 self.agregar_frame_modelo(nombre, info)
                 self.contador_modelos += 1
@@ -2067,9 +2070,11 @@ class App(ctk.CTk):
                 print("Rendimiento del mejor(Grid):",rendimiento)
                 # Crear nombre del botón y ventana
                 nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                predictoras = list(self.df.columns)
+                predictoras.remove(self.y)
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
-                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \nVariables Predictoras: {",".join(predictoras)}
                            \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
@@ -2094,9 +2099,11 @@ class App(ctk.CTk):
                 print("Rendimiento del mejor (Randomized):",rendimiento)
                                 # Crear nombre del botón y ventana
                 nombre = f"Modelo {self.contador_modelos} : {select_model}"
+                predictoras = list(self.df.columns)
+                predictoras.remove(self.y)
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
-                           \nVariables Predictoras: {",".join(list(self.df.columns).remove(self.y))}
+                           \nVariables Predictoras: {",".join(predictoras)}
                            \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
