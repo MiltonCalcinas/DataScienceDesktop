@@ -3,6 +3,7 @@ import requests
 import json
 from tkinter import messagebox
 import config
+import colores
 
 class Login(ctk.CTkToplevel):
 
@@ -12,6 +13,7 @@ class Login(ctk.CTkToplevel):
         self.authenticated = False
         self.with_df = False
         self.is_new_user = False
+        self.colores = colores.ColorDataFrame().get_colores("DRACULA")
 
         #self.transient(self)
         self.lift()
@@ -30,9 +32,9 @@ class Login(ctk.CTkToplevel):
             "username": nombre,
             "password": password
         }
-
+        import config
         try:
-            res = requests.post("http://127.0.0.1:8000/api/signin/", json=data)
+            res = requests.post(config.VIEW_SIGIN, json=data)
 
             if res.status_code == 200:
                 self.authenticated = True
@@ -82,7 +84,7 @@ class Login(ctk.CTkToplevel):
         }
 
         try:
-            res = requests.post("http://127.0.0.1:8000/api/signup/", data=json.dumps(data), headers=headers)
+            res = requests.post(config.VIEW_SIGUP, data=json.dumps(data), headers=headers)
 
             if res.status_code == 201:
                 self.authenticated = True
@@ -122,32 +124,32 @@ class Login(ctk.CTkToplevel):
 
         lbl_titulo = ctk.CTkLabel(self.frame_incio,text="Registrarse")
         lbl_titulo.grid(row=0,column=0,columnspan=3)
-        lbl_titulo.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre")
         lbl_nombre.grid(row=1,column=0,padx=(50,20),pady=(50,20))
-        lbl_nombre.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(50,20))
-        txt_nombre.configure(text_color=config.COLOR_LETRA_NORMAL)
+        txt_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         lbl_password = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password.grid(row=2,column=0,padx=(50,20),pady=(0,20))
-        lbl_password.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password.grid(row=2,column=1,padx=(0,10),pady=(0,20))
-        txt_password.configure(text_color=config.COLOR_LETRA_NORMAL)
+        txt_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
 
         lbl_password2 = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password2.grid(row=3,column=0,padx=(50,20),pady=(0,20))
-        lbl_password2.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_password2.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         txt_password2 = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password2.grid(row=3,column=1,padx=(0,10),pady=(0,20))
-        txt_password2.configure(text_color=config.COLOR_LETRA_NORMAL)
+        txt_password2.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
 
         self.visible = False
@@ -156,7 +158,7 @@ class Login(ctk.CTkToplevel):
                                     command=lambda: self.__toogle_password(txt_password,txt_password2),
                                     width=10)
         btn_mostrar.grid(row=2,column=2,padx=(0,50),pady=(0,20))
-        btn_mostrar.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_mostrar.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_signup = ctk.CTkButton(self.frame_incio,
                                          text="SIGNUP",
@@ -167,14 +169,14 @@ class Login(ctk.CTkToplevel):
                                          ),
                                          )
         btn_signup.grid(row=4,column=1,padx=(0,10),pady=(0,20))
-        btn_signup.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_singin = ctk.CTkButton(self.frame_incio,
                                         text="SIGNIN",
                                         command=self.__frame_singin
                                         )
         btn_singin.grid(row=5,column=1,padx=(0,10),pady=(0,20))
-        btn_singin.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_singin.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
 
         self.recordarme_var = ctk.BooleanVar()
@@ -185,7 +187,7 @@ class Login(ctk.CTkToplevel):
             variable=self.recordarme_var
         )
         check_recordarme.grid(row=6, column=1, sticky="w")
-        check_recordarme.configure(text_color=config.COLOR_LETRA_NORMAL)
+        check_recordarme.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
     def __toogle_password(self,*args):
         if  not self.visible:
@@ -205,30 +207,30 @@ class Login(ctk.CTkToplevel):
 
         lbl_titulo = ctk.CTkLabel(self.frame_incio,text="Inicia Sesión")
         lbl_titulo.grid(row=0,column=0,columnspan=3)
-        lbl_titulo.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre")
         lbl_nombre.grid(row=1,column=0,padx=(50,20),pady=(50,20))
-        lbl_nombre.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(50,20))
-        txt_nombre.configure(text_color=config.COLOR_LETRA_NORMAL)
+        txt_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         lbl_password = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password.grid(row=2,column=0,padx=(50,20),pady=(0,20))
-        lbl_password.configure(text_color=config.COLOR_LETRA_NORMAL)
+        lbl_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password.grid(row=2,column=1,padx=(0,10),pady=(0,20))
-        txt_password.configure(text_color=config.COLOR_LETRA_NORMAL)
+        txt_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
         self.visible = False
         btn_mostrar = ctk.CTkButton(self.frame_incio,
                                     text="👁",
                                     command=lambda: self.__toogle_password(txt_password),
                                     width=10)
-        btn_mostrar.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_mostrar.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
         btn_mostrar.grid(row=2,column=2,padx=(0,50),pady=(0,20))
 
 
@@ -242,13 +244,13 @@ class Login(ctk.CTkToplevel):
                                          
                                          )
         btn_signin.grid(row=3,column=1,padx=(0,10),pady=(0,20))
-        btn_signin.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_signin.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_signup = ctk.CTkButton(self.frame_incio,
                                         text="SIGNUP",
                                         command=self.__frame_signup
                                         )
-        btn_signup.configure(fg_color=config.COLOR_FONDO_BOTON)
+        btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
         btn_signup.grid(row=4,column=1,padx=(0,10),pady=(0,20))
 
 
@@ -258,7 +260,7 @@ class Login(ctk.CTkToplevel):
             self.frame_incio,
             text="Recordarme",
             variable=self.recordarme_var,
-            text_color=config.COLOR_LETRA_NORMAL
+            text_color=self.colores.COLOR_LETRA_NORMAL
         )
         check_recordarme.grid(row=5, column=1, sticky="w")
     
@@ -267,26 +269,26 @@ class Login(ctk.CTkToplevel):
         self.geometry("400x500")
         self.title("Inicia Sesión")
         self.resizable(False,False)
-        self.configure(fg_color=config.COLOR_FONDO)
+        self.configure(fg_color=self.colores.COLOR_FONDO_APP)
                 # Encambezado
         lbl_bienvenido = ctk.CTkLabel(self,
                                       text="Ciencia de Datos",
                                       )
-        lbl_bienvenido.configure(text_color=config.COLOR_LETRA_NEGRITA)
+        lbl_bienvenido.configure(text_color=self.colores.COLOR_LETRA_NEGRITA)
         lbl_bienvenido.pack(fill="x",pady=(20,20))
 
         self.frame_incio =ctk.CTkFrame(self,)
-        self.frame_incio.configure(fg_color=config.COLOR_FONDO)
+        self.frame_incio.configure(fg_color=self.colores.COLOR_FONDO_APP)
 
         self.frame_incio.pack()
         
         self.btn_signup = ctk.CTkButton(self.frame_incio,text="signup",command=self.__frame_signup)
         self.btn_signup.pack(pady=(0,20))
-        self.btn_signup.configure(fg_color=config.COLOR_FONDO_BOTON)
+        self.btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
         
         self.btn_sigin = ctk.CTkButton(self.frame_incio,text="signin",command= self.__frame_singin)
         self.btn_sigin.pack()
-        self.btn_sigin.configure(fg_color=config.COLOR_FONDO_BOTON)   
+        self.btn_sigin.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)   
 
 
 

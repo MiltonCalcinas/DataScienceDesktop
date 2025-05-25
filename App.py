@@ -44,7 +44,7 @@ def sesion_guardada():
         if token:
             # Validamos el token con el backend
             print("validando el token")
-            res = requests.get("http://127.0.0.1:8000/api/verify_token/", headers={
+            res = requests.get(config.VIEW_VERIFY_TOKEN, headers={
                 "Authorization": f"Token {token}"
             })
 
@@ -1664,6 +1664,7 @@ class App(ctk.CTk):
                                                 "Randomized Search CV"
                                             ],
                                      button_color=self.color.COLOR_RELLENO_WIDGET,
+                                     border_color=self.color.COLOR_BORDE_WIDGET,
                                      command=habilitar,
                                      state="readonly")
         cbo_type_search.set("Tipo Busqueda")
