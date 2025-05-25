@@ -1842,30 +1842,33 @@ class App(ctk.CTk):
             self.hojas[f"hoja{i}"].grid_columnconfigure(0, weight=1)  # Asegura que la columna 0 de hoja-i se expanda
 
 
-        # # Contenido dentro del frame
 
-        # Agregar más elementos al menú lateral (panel_graficos)
-        
-        ico_barra = PhotoImage(file=r"iconos\ico_barra.png")
 
         from PIL import Image  # Necesitarás Pillow instalado
-
+        import os
         # Cargar imagen con PIL
-        pil_image = Image.open(r"iconos\ico_barra.png")
+        ruta_iconos = os.listdir(r'iconos\plots')
+        print("--- iconos")
+        pill_images =[]
+        my_ctk_images  =[]
+        for nombre_ico in ruta_iconos:
+            ruta_ico =os.path.join( r"iconos\plots", nombre_ico)
+            pil_image = Image.open(ruta_ico)
+            pill_images.append(pil_image)
+            my_ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(30,30)) 
+            my_ctk_images.append(my_ctk_image)
 
-        # Crear un CTkImage
-        my_ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(30,30)) 
 
         # Agregar Iconos de Gráficos
 
-        tipos_graficos = ["Barra", "Tarta", "Linea", "Dispersión", "Bigote", "Bigote por categoría"]
+        tipos_graficos = ["Barra", "Tarta", "Linea", "Dispersión", "Bigote", "Bigote por categoría","Densidad","Histograma"]
 
         btn_graficos = {}
         for i, tipo in enumerate(tipos_graficos):
             btn_graficos[f"btn_{i+1}"] = ctk.CTkButton(
                 cuadro_iconos,
                 text="",
-                image=my_ctk_image,
+                image=my_ctk_images[i],
                 width=10, height=10,
                 command=lambda t=tipo: self.crear_objeto(t)
             )
