@@ -69,7 +69,8 @@ class App(ctk.CTk):
     def __init__(self, fg_color = None, **kwargs):
         super().__init__(fg_color, **kwargs)
         
-        self.color = colores.ColorDataFrame().get_colores("DRACULA")
+        self.mode="DRACULA"
+        self.color = colores.ColorDataFrame().get_colores(self.mode)
         self.configure(fg_color=self.color.COLOR_FONDO_APP)
         self.model_info_list = []
         self.contador_modelos = 0
@@ -182,9 +183,8 @@ class App(ctk.CTk):
             self.create_pop_load_data()
 
     def create_pop_load_data(self):
-        pop_load_data = ctk.CTkToplevel(self)
+        pop_load_data = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         pop_load_data.resizable(False, False)
-        pop_load_data.configure(fg_color=self.color.COLOR_FONDO_FRAME)
 
         # Mostrar en primer  plano
         pop_load_data.transient(self)
@@ -265,9 +265,9 @@ class App(ctk.CTk):
 
 
     def __filtrar(self):
-        self.pop_filter = ctk.CTkToplevel(self)
+        self.pop_filter = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         self.pop_filter.title("Filtros")
-        self.pop_filter.resizable(False, False)
+        self.pop_filter.resizable(False, False) 
         self.pop_filter.transient(self)
         self.pop_filter.lift()
         self.pop_filter.focus_force()
@@ -278,16 +278,15 @@ class App(ctk.CTk):
         self.filter_row = 0
         self.filter_widgets = []  # para almacenar widgets por fila
 
-        scroll_frame = ctk.CTkScrollableFrame(self.pop_filter, width=600, height=300)
-        scroll_frame.grid(row=0, column=0,columnspan=3, padx=10, pady=10)
-        scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
-        self.scroll_frame = scroll_frame  # guardamos referencia
+        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_filter, width=540, height=300)
+        self.scroll_frame.grid(row=0, column=0,columnspan=3, padx=10, pady=10)
+        self.scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
 
         self.add_variable_filter()
 
         ctk.CTkButton(self.pop_filter, text="+", width=50,
                     command=self.add_variable_filter,
-                    fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=1, column=0, padx=(0, 20), pady=(0, 20))
+                    fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=1, column=0, padx=(0, 20), pady=(0, 10))
 
         ctk.CTkButton(self.pop_filter, text="Filtrar", command=self.exe_filter,
                       fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=2, column=0, padx=(0, 20), pady=(0, 20))
@@ -448,7 +447,7 @@ class App(ctk.CTk):
         if metodo == "-- Ninguna": 
             self.cbo_ANO.set("A. No Superivosado")
             return
-        top = ctk.CTkToplevel(self)
+        top = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         top.title(f"Configurar {metodo}")
         top.geometry("400x400")
         top.resizable(False, False)
@@ -535,7 +534,7 @@ class App(ctk.CTk):
             "Número (int) a Número (float)",
         ]
         self.pop_conversion = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
-        self.pop_conversion.title("Conversion")
+        self.pop_conversion.title("Convertir Tipo de Datos")
         self.pop_conversion.resizable(False, False)
         self.pop_conversion.transient(self)
         self.pop_conversion.lift()
@@ -547,8 +546,9 @@ class App(ctk.CTk):
         center_window(self.pop_conversion)
 
         # Crear un marco desplazable
-        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_conversion, width=500, height=300,fg_color=self.color.COLOR_FONDO_FRAME)
-        self.scroll_frame.grid(row=0, column=0, padx=10, pady=10)
+        self.scroll_frame = ctk.CTkScrollableFrame(self.pop_conversion, width=485, height=300)
+        self.scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+        self.scroll_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 
         # Guardar una lista para agregar nuevas filas dinámicamente
         self.conversion_row = 1
@@ -560,7 +560,11 @@ class App(ctk.CTk):
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         variable_column.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",text_color=self.color.COLOR_LETRA_NORMAL)
+        if self.mode == "LIGHT":
+            color_texto=self.color.COLOR_LETRA_NORMAL
+        else:
+            color_texto=self.color.COLOR_LETRA_BOTON
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=color_texto)
         chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
         
         # Guardar los widgets en una lista
@@ -572,14 +576,14 @@ class App(ctk.CTk):
                                           command=lambda:self.add_variable_conversion(values),
                                           fg_color=self.color.COLOR_RELLENO_WIDGET
                                           )
-        self.btn_add_variables.grid(row=1,column=0,padx=20,pady=(0,20))
+        self.btn_add_variables.grid(row=1,column=0,pady=(0,10))
 
         self.btn_conversion = ctk.CTkButton(self.pop_conversion,
                                   text="Convertir Tipo",
                                   command=self.__conversion,
                                   fg_color=self.color.COLOR_RELLENO_WIDGET
                                   )
-        self.btn_conversion.grid(row=2,column=0,padx=(0,20),pady=(0,20))
+        self.btn_conversion.grid(row=1,column=1,pady=(0,10))
 
     def add_variable_conversion(self,values):
         fila = self.conversion_row
@@ -660,15 +664,22 @@ class App(ctk.CTk):
         self.popup_statistics.focus_force()
         self.popup_statistics.grab_set()
 
+        # Guardar una lista para agregar nuevas filas dinámicamente
+        self.statistics_row = 1
         
-        self.statistics_combos = []  # ← Aquí guardaremos los ComboBox
+        self.statistics_combos = []  # ← Aquí guardaremos los ComboBox        
+
+        # Crear un marco desplazable
+        self.scroll_frame = ctk.CTkScrollableFrame(self.popup_statistics, width=340, height=300)
+        self.scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+        self.scroll_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 
         # Añadir el primer par de ComboBox con referencias
-        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_stat.grid(row=1, column=0, padx=(20, 20), pady=(20, 20))
+        cbo_stat = ctk.CTkComboBox(self.scroll_frame, values=values,button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_stat.grid(row=0, column=0, padx=(20, 20), pady=(20, 20))
 
-        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_var.grid(row=1, column=1, padx=(0, 20), pady=(20, 20))
+        cbo_var = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_var.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
         self.statistics_combos.append((cbo_stat, cbo_var))
         
@@ -676,33 +687,25 @@ class App(ctk.CTk):
                                           text="+",
                                           width=50,
                                           command=lambda:self.add_variable_statistics(values),fg_color=self.color.COLOR_RELLENO_WIDGET)
-        self.btn_add_variables.grid(row=2,column=0,padx=20)
+        self.btn_add_variables.grid(row=2,column=0,pady=(0,10))
 
         self.btn_statistics = ctk.CTkButton(self.popup_statistics,
                                   text="Calcular",
                                   command=self.__statistics,fg_color=self.color.COLOR_RELLENO_WIDGET)
-        self.btn_statistics.grid(row=3,column=1,padx=(0,20),pady=(0,20))
+        self.btn_statistics.grid(row=2,column=1,pady=(0,10))
 
     def add_variable_statistics(self, values):
-        fila = self.btn_add_variables.grid_info()["row"]
+        fila = self.statistics_row
         
-        cbo_stat = ctk.CTkComboBox(self.popup_statistics, values=values,button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_stat = ctk.CTkComboBox(self.scroll_frame, values=values,button_color=self.color.COLOR_RELLENO_WIDGET)
         cbo_stat.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
 
-        cbo_var = ctk.CTkComboBox(self.popup_statistics, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_var = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         cbo_var.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
 
         self.statistics_combos.append((cbo_stat, cbo_var))  # ← Guardamos los nuevos ComboBox
-
-        self.btn_add_variables.grid_configure(row=fila + 1)
-        self.btn_statistics.grid_configure(row=fila + 2)
-
-        geo = self.popup_statistics.geometry()
-        ancho_alto, x_y = geo.split('+', 1)
-        ancho, alto = map(int, ancho_alto.split('x'))
-        x, y = map(int, x_y.split('+'))
-        nuevo_alto = alto + 50
-        self.popup_statistics.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
+        
+        self.statistics_row += 1
 
     def __statistics(self):
 
@@ -791,12 +794,19 @@ class App(ctk.CTk):
             return
         
         self.popup_generate_graph = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
-        self.popup_generate_graph.geometry("620x100")
+        self.popup_generate_graph.title("Generar Gráfico")
         self.popup_generate_graph.resizable(False,False)
 
         #centar ventana
         self.popup_generate_graph.update()
         center_window(self.popup_generate_graph)
+        
+        self.generate_grafics_row = 2
+
+        # Crear un marco desplazable
+        self.scroll_frame = ctk.CTkScrollableFrame(self.popup_generate_graph, width=570, height=300)
+        self.scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+        self.scroll_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
 
         self.popup_generate_graph.transient(self)
         self.popup_generate_graph.lift()
@@ -811,20 +821,17 @@ class App(ctk.CTk):
                     "Bigote por categoría"
                     ]
 
-        ctk.CTkComboBox(self.popup_generate_graph,
+        ctk.CTkComboBox(self.scroll_frame,
                                             values=values,
-                                            command=lambda valor, fila=1: self._type_graph(valor,1)
+                                            command=lambda valor, fila=0: self._type_graph(valor,0)
                                             ,button_color=self.color.COLOR_RELLENO_WIDGET
-        ).grid(row=1,column=0,padx=(20,20),pady=(10,20))
-
-        
-
+        ).grid(row=0,column=0,padx=(20,20),pady=(10,20))
 
         self.btn_add_variables = ctk.CTkButton(self.popup_generate_graph,
                                           text="+",
                                           width=50,
-                                          command=lambda:self.add_variable(values))
-        self.btn_add_variables.grid(row=2,column=0,padx=20,pady=(0,20))
+                                          command=lambda:self.add_variable(values),fg_color=self.color.COLOR_RELLENO_WIDGET)
+        self.btn_add_variables.grid(row=1,column=0,padx=20,pady=(0,10))
 
 
 
@@ -843,11 +850,11 @@ class App(ctk.CTk):
         # Construye los nuevos widgets según el tipo
         widgets = []
         if valor in ["Barra", "Tarta"]:
-            cbo_variable = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_variable = ctk.CTkComboBox(self.scroll_frame,
                                         values=list(self.df.select_dtypes(include="object").columns)
                                         ,button_color=self.color.COLOR_RELLENO_WIDGET)
             cbo_variable.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
-            btn = ctk.CTkButton(self.popup_generate_graph,
+            btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
                                 command=lambda: self._add_graph(valor, categoria=cbo_variable.get()),
@@ -856,15 +863,15 @@ class App(ctk.CTk):
             widgets.extend([cbo_variable, btn])
 
         elif valor in ["Linea", "Dispersión"]:
-            cbo_x = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_x = ctk.CTkComboBox(self.scroll_frame,
                                     values=list(self.df.select_dtypes(include="number").columns)
                                     ,button_color=self.color.COLOR_RELLENO_WIDGET)
-            cbo_y = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_y = ctk.CTkComboBox(self.scroll_frame,
                                     values=list(self.df.select_dtypes(include="number").columns)
                                     ,button_color=self.color.COLOR_RELLENO_WIDGET)
             cbo_x.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             cbo_y.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
-            btn = ctk.CTkButton(self.popup_generate_graph,
+            btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
                                 command=lambda: self._add_graph(valor, x=cbo_x.get(), y=cbo_y.get()),
@@ -873,11 +880,11 @@ class App(ctk.CTk):
             widgets.extend([cbo_x, cbo_y, btn])
 
         elif valor == "Bigote":
-            cbo_var = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_var = ctk.CTkComboBox(self.scroll_frame,
                                     values=list(self.df.select_dtypes(include="number").columns)
                                     ,button_color=self.color.COLOR_RELLENO_WIDGET)
             cbo_var.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
-            btn = ctk.CTkButton(self.popup_generate_graph,
+            btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
                                 command=lambda: self._add_graph(valor, va=cbo_var.get()),
@@ -886,15 +893,15 @@ class App(ctk.CTk):
             widgets.extend([cbo_var, btn])
 
         elif valor == "Bigote por categoría":
-            cbo_num = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_num = ctk.CTkComboBox(self.scroll_frame,
                                     values=list(self.df.select_dtypes(include="number").columns)
                                     ,button_color=self.color.COLOR_RELLENO_WIDGET)
-            cbo_cat = ctk.CTkComboBox(self.popup_generate_graph,
+            cbo_cat = ctk.CTkComboBox(self.scroll_frame,
                                     values=list(self.df.select_dtypes(include="object").columns)
                                     ,button_color=self.color.COLOR_RELLENO_WIDGET)
             cbo_num.grid(row=fila, column=1, pady=(10, 20), padx=(0, 20))
             cbo_cat.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
-            btn = ctk.CTkButton(self.popup_generate_graph,
+            btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
                                 command=lambda: self._add_graph(valor,
@@ -905,31 +912,21 @@ class App(ctk.CTk):
             widgets.extend([cbo_num, cbo_cat, btn])
 
         self.graph_widgets[fila] = widgets
-        self.popup_generate_graph.update()
         
 
     def add_variable(self, values):
-        fila = self.btn_add_variables.grid_info()["row"]
+        fila = self.generate_grafics_row
         
         # Combo de tipo de gráfico
-        cbo_tipo = ctk.CTkComboBox(self.popup_generate_graph,
+        cbo_tipo = ctk.CTkComboBox(self.scroll_frame,
                                 values=values,
                                 command=lambda valor, fila=fila: self._type_graph(valor, fila))
         cbo_tipo.grid(row=fila, column=0, padx=(20, 20), pady=(10, 20))
         
         self.graph_widgets[fila] = [cbo_tipo]
+        
+        self.generate_grafics_row +=1
 
-        # Actualiza ubicación de los botones
-        self.btn_add_variables.grid_configure(row=fila + 1)
-        #self.btn_graph.grid_configure(row=fila + 2)
-
-        # Ajuste ventana
-        geo = self.popup_generate_graph.geometry()
-        ancho_alto, x_y = geo.split('+', 1)
-        ancho, alto = map(int, ancho_alto.split('x'))
-        x, y = map(int, x_y.split('+'))
-        nuevo_alto = alto + 70
-        self.popup_generate_graph.geometry(f"{ancho}x{nuevo_alto}+{x}+{y}")
     def _add_graph(self, tipo, **variable):
         if tipo == "Barra":
             fig, ax = plt.subplots()
@@ -977,7 +974,7 @@ class App(ctk.CTk):
 
 
     def __select_columns(self):
-        popup_choose_columns = ctk.CTkToplevel(self)
+        popup_choose_columns = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         popup_choose_columns.title("Elige las columnas")
         popup_choose_columns.resizable(False,False)
 
@@ -1006,16 +1003,13 @@ class App(ctk.CTk):
         btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                         text="Seleccionar",
                                         command=lambda:self.__save_columns(group_check,popup_choose_columns))
-        btn_choose_columns.pack(anchor="w",pady=5,padx=20)
+        btn_choose_columns.pack(anchor="w",pady=(5,10),padx=20)
 
     def __save_columns(self,group_check,popup_choose_columns):
         cols =  [ col for col,var in group_check.items() if var.get()]
         self.df = self.df[cols]
         self.show_tree_viewport()
         popup_choose_columns.destroy()
-
-        
-
 
     def __transform_variables(self,function):
         print("--evento click Transformar Variable :",function)
@@ -1032,7 +1026,7 @@ class App(ctk.CTk):
             return
         else:
 
-            popup_choose_columns = ctk.CTkToplevel(self)
+            popup_choose_columns = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
             popup_choose_columns.title(f"Calcular {function}")
             popup_choose_columns.resizable(False,False)
             
@@ -1067,7 +1061,6 @@ class App(ctk.CTk):
                                                                                popup_choose_columns))
             btn_choose_columns.pack(anchor="w",pady=5,padx=20)
 
-                    
     def __transfrom(self,group_check,function,math_functions,popup_choose_columns):
         try:
             print("-- on click columnas elegidas:")
@@ -1080,7 +1073,6 @@ class App(ctk.CTk):
 
         except Exception as ex:
             messagebox.showerror("Campos Invalidos para la Transformación", ex)
-
 
     def post_table_name(self,table_name):
         
@@ -1136,9 +1128,6 @@ class App(ctk.CTk):
                 message=ex
             )
         self.form.destroy()
-        
-
-        
 
     def importar_from_excel(self,sheet_name,table_name):
         
@@ -1171,9 +1160,6 @@ class App(ctk.CTk):
                 message=ex
             )
         self.form.destroy()
-                    
-
-
 
     def importar_from_bbdd(self,**kwargs):
         for value in kwargs.values():
@@ -1240,8 +1226,6 @@ class App(ctk.CTk):
             txt_file.insert(0,archivo)
             txt_file.configure(state="disabled")
 
-
-
     def __guardar_url_excel(self,txt_file):
          
         self.url_excel = filedialog.askopenfilename(
@@ -1255,9 +1239,6 @@ class App(ctk.CTk):
             txt_file.insert(0,archivo)
             txt_file.configure(state="disabled")
 
-
-
-
     def __ventana_conexion(self,tipo_bbdd,padre = None):
         print("--- La fuente de datos seleccionada es :",tipo_bbdd)
         
@@ -1267,7 +1248,7 @@ class App(ctk.CTk):
         if padre is not None:
             padre.destroy()
         
-        self.form = ctk.CTkToplevel(self)
+        self.form = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         
         self.form.title("Obtención de Datos")
         
@@ -1275,7 +1256,6 @@ class App(ctk.CTk):
         self.form.lift()
         self.form.focus_force() 
         self.form.grab_set() # bloque ventana principal
-
     
         if tipo_bbdd == "Archivo Excel":
             
@@ -1441,7 +1421,6 @@ class App(ctk.CTk):
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET
                                                  )
         self.btn_elegir_columnas.grid(row=0,column=1,padx=(5,5),sticky="nsew",pady=(0,10))
-        
 
         cbo_transform_variables = ctk.CTkComboBox(header_hijo,
                                       values=[
@@ -1464,7 +1443,6 @@ class App(ctk.CTk):
                                            command=self._generate_graph,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_generate_graph.grid(row=0,column=3,padx=(5,5),sticky="nsew",pady=(0,10))
-        
 
         self.cbo_variable_dependiente = ctk.CTkComboBox(header_hijo,
                                       values=[
@@ -1493,7 +1471,7 @@ class App(ctk.CTk):
 
 
         btn_convert_data_type = ctk.CTkButton(header_hijo,
-                                              text="Convertir Tipo de Datos",
+                                              text="Convertir Tipo Datos",
                                               command=self.__convert_data_type,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_convert_data_type.grid(row=1,column=1,padx=(5,5),sticky="nsew")
@@ -1554,7 +1532,7 @@ class App(ctk.CTk):
             return
         self.y = value
         
-        pop = ctk.CTkToplevel(self)
+        pop = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         pop.title("Tipo Problema")
         pop.resizable(False, False)
         pop.transient(self)
@@ -1670,7 +1648,11 @@ class App(ctk.CTk):
         cbo_type_search.set("Tipo Busqueda")
         
         cbo_type_search.grid(row=1,column=0,padx=(10,5),sticky="snew")
-        self.spin_cv = ctk.CTkComboBox(header_hijo, values=["3"]+ [str(i) for i in range(5, 21, 5)])
+        self.spin_cv = ctk.CTkComboBox(header_hijo,
+                                       values=["3"]+ [str(i) for i in range(5, 21, 5)],
+                                        button_color=self.color.COLOR_RELLENO_WIDGET,
+                                        border_color=self.color.COLOR_BORDE_WIDGET
+                                        )
 
         self.spin_cv.grid(row=0, column=1, padx=5, pady=(0,10), sticky="snew")
         self.spin_cv.set("cv")
@@ -1686,6 +1668,8 @@ class App(ctk.CTk):
                                       "ROC AUC",
                                       "Precisión"
                                   ],
+                                  button_color=self.color.COLOR_RELLENO_WIDGET,
+                                  border_color=self.color.COLOR_BORDE_WIDGET,
                                   state="readonly")
         self.cbo_scoring.set("Scoring")
         self.cbo_scoring.grid(row=1,column=1,padx=5,sticky="snew")
@@ -1694,7 +1678,7 @@ class App(ctk.CTk):
         self.area_params.configure(state="disabled")
         self.area_params.grid(row=0,rowspan=2,column=2,padx=(5,5),sticky="snew")
 
-        frame_btn = ctk.CTkFrame(header_hijo)
+        frame_btn = ctk.CTkFrame(header_hijo,fg_color=self.color.COLOR_FONDO_FRAME)
         frame_btn.grid(row=0,rowspan=2,column=3,sticky="snew")
         
         btn_entrenar = ctk.CTkButton(frame_btn,
@@ -1731,10 +1715,10 @@ class App(ctk.CTk):
         header_padre.grid_columnconfigure(0, weight=1)  # Expande la columna 0 de header_padre
 
         #header_hijo.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_hijo
-        header_hijo.grid_columnconfigure(0, weight=1,minsize=100)  # Expande la columna 0 de header_hijo
-        header_hijo.grid_columnconfigure(1, weight=1,minsize=200)  # Expande la columna 1 de header_hijo
+        header_hijo.grid_columnconfigure(0, weight=1,minsize=120)  # Expande la columna 0 de header_hijo
+        header_hijo.grid_columnconfigure(1, weight=1,minsize=210)  # Expande la columna 1 de header_hijo
         header_hijo.grid_columnconfigure(2,weight=1,minsize=300)
-        header_hijo.grid_columnconfigure(3,weight=1,minsize=100)
+        header_hijo.grid_columnconfigure(3,weight=1,minsize=120)
 
         # Frame de imagen
         frame_img = ctk.CTkFrame(header_hijo,fg_color=self.color.COLOR_RELLENO_WIDGET)
@@ -2363,7 +2347,7 @@ class App(ctk.CTk):
         self.modelo_count += 1
 
     def mostrar_info_modelo(self, nombre, info):
-        ventana = ctk.CTkToplevel(self)
+        ventana = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         ventana.title(nombre)
         ventana.resizable(False,False)
         #ventana.geometry("300x200")

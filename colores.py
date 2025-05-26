@@ -38,7 +38,7 @@ class ColorDataFrame():
                 "COLOR_BORDE_WIDGET":"#FFFD82",
                 "COLOR_LETRA_NORMAL" : "#272932",
                 "COLOR_LETRA_NEGRITA": "#000000",
-                'COLOR_LETRA_CBO':  '"#ED217C"',
+                'COLOR_LETRA_CBO':  '#ED217C',
                 'COLOR_LETRA_BOTON':  '#FFFFFF',
                 'COLOR_LETRA_FILAS':  '#2D3047',
                 'COLOR_RELLENO_FILA_SELECCION':  '#FFFD82',

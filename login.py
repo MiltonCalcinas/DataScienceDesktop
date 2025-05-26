@@ -13,7 +13,12 @@ class Login(ctk.CTkToplevel):
         self.authenticated = False
         self.with_df = False
         self.is_new_user = False
-        self.colores = colores.ColorDataFrame().get_colores("DRACULA")
+        self.mode="DRACULA"
+        self.colores = colores.ColorDataFrame().get_colores(self.mode)
+        if self.mode == "LIGHT":
+            self.color_texto = self.colores.COLOR_LETRA_NORMAL
+        else:
+            self.color_texto = self.colores.COLOR_LETRA_BOTON
 
         #self.transient(self)
         self.lift()
@@ -120,15 +125,15 @@ class Login(ctk.CTkToplevel):
     def __frame_signup(self):
         self.title("Registrarse")
         for widget in self.frame_incio.winfo_children():
-            widget.destroy()
+            widget.destroy()        
 
         lbl_titulo = ctk.CTkLabel(self.frame_incio,text="Registrarse")
         lbl_titulo.grid(row=0,column=0,columnspan=3)
-        lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_titulo.configure(text_color=self.color_texto)
 
         lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre")
         lbl_nombre.grid(row=1,column=0,padx=(50,20),pady=(50,20))
-        lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_nombre.configure(text_color=self.color_texto)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(50,20))
@@ -136,7 +141,7 @@ class Login(ctk.CTkToplevel):
 
         lbl_password = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password.grid(row=2,column=0,padx=(50,20),pady=(0,20))
-        lbl_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_password.configure(text_color=self.color_texto)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password.grid(row=2,column=1,padx=(0,10),pady=(0,20))
@@ -145,7 +150,7 @@ class Login(ctk.CTkToplevel):
 
         lbl_password2 = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password2.grid(row=3,column=0,padx=(50,20),pady=(0,20))
-        lbl_password2.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_password2.configure(text_color=self.color_texto)
 
         txt_password2 = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password2.grid(row=3,column=1,padx=(0,10),pady=(0,20))
@@ -184,10 +189,11 @@ class Login(ctk.CTkToplevel):
         check_recordarme = ctk.CTkCheckBox(
             self.frame_incio,
             text="Recordarme",
-            variable=self.recordarme_var
+            variable=self.recordarme_var,
+            border_color=self.colores.COLOR_BORDE_WIDGET, 
+            text_color=self.color_texto
         )
         check_recordarme.grid(row=6, column=1, sticky="w")
-        check_recordarme.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
     def __toogle_password(self,*args):
         if  not self.visible:
@@ -207,11 +213,11 @@ class Login(ctk.CTkToplevel):
 
         lbl_titulo = ctk.CTkLabel(self.frame_incio,text="Inicia Sesión")
         lbl_titulo.grid(row=0,column=0,columnspan=3)
-        lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_titulo.configure(text_color=self.color_texto)
 
         lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre")
         lbl_nombre.grid(row=1,column=0,padx=(50,20),pady=(50,20))
-        lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_nombre.configure(text_color=self.color_texto)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(50,20))
@@ -219,7 +225,7 @@ class Login(ctk.CTkToplevel):
 
         lbl_password = ctk.CTkLabel(self.frame_incio,text="Password")
         lbl_password.grid(row=2,column=0,padx=(50,20),pady=(0,20))
-        lbl_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
+        lbl_password.configure(text_color=self.color_texto)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
         txt_password.grid(row=2,column=1,padx=(0,10),pady=(0,20))
@@ -260,7 +266,8 @@ class Login(ctk.CTkToplevel):
             self.frame_incio,
             text="Recordarme",
             variable=self.recordarme_var,
-            text_color=self.colores.COLOR_LETRA_NORMAL
+            border_color=self.colores.COLOR_BORDE_WIDGET,
+            text_color=self.color_texto
         )
         check_recordarme.grid(row=5, column=1, sticky="w")
     
@@ -274,7 +281,7 @@ class Login(ctk.CTkToplevel):
         lbl_bienvenido = ctk.CTkLabel(self,
                                       text="Ciencia de Datos",
                                       )
-        lbl_bienvenido.configure(text_color=self.colores.COLOR_LETRA_NEGRITA)
+        lbl_bienvenido.configure(text_color=self.color_texto)
         lbl_bienvenido.pack(fill="x",pady=(20,20))
 
         self.frame_incio =ctk.CTkFrame(self,)
