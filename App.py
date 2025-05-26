@@ -256,7 +256,7 @@ class App(ctk.CTk):
         self.notebook = ctk.CTkTabview(self,
                                        border_color=self.color.COLOR_BORDE_WIDGET,
                                        border_width=3)
-        self.notebook.pack(fill="both",expand=False,padx=10,pady=10)
+        self.notebook.pack(fill="both",expand=True,padx=10,pady=10)
         self.notebook.configure(fg_color=self.color.COLOR_FONDO_APP)
 
         self.tab1 = self.notebook.add("Procesar")
@@ -1714,26 +1714,41 @@ class App(ctk.CTk):
         header_padre.grid_columnconfigure(0, weight=1)  # Expande la columna 0 de header_padre
 
         #header_hijo.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_hijo
-        header_hijo.grid_columnconfigure(0, weight=1,minsize=120)  # Expande la columna 0 de header_hijo
+        header_hijo.grid_columnconfigure(0, weight=1,minsize=200)  # Expande la columna 0 de header_hijo
         header_hijo.grid_columnconfigure(1, weight=1,minsize=250)  # Expande la columna 1 de header_hijo
         header_hijo.grid_columnconfigure(2,weight=1,minsize=300)
         header_hijo.grid_columnconfigure(3,weight=1,minsize=120)
 
         # Frame de imagen
-        frame_img = ctk.CTkFrame(header_hijo, fg_color=self.color.COLOR_FONDO_FRAME)
-        frame_img.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
+        frame_img = tk.LabelFrame(header_hijo, text="Opciones Imagen", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_img.grid(row=0, column=0, padx=(0, 5), sticky="nsew")
+        frame_img.grid_columnconfigure(0, weight=1)
+        frame_img.grid_columnconfigure(1, weight=1)
+        
+        self.cbo_editar_grafico = ctk.CTkComboBox(frame_img,
+                                          button_color=self.color.COLOR_RELLENO_WIDGET,
+                                          values=[],
+                                          state="readonly",
+                                          command=""
+                                          )
+        self.cbo_editar_grafico.set("Elegir Grafico")
+        self.cbo_editar_grafico.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
 
-        cbo_fondo = ctk.CTkComboBox(frame_img, values=["Opción 1", "Opción 2", "Opción 3"],
-                                    button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_fondo.pack(pady=(0, 10), fill="x")
-
-        btn_imagen = ctk.CTkButton(frame_img, text="Cargar Imagen", command=self.buscar_imagen,
+        btn_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.buscar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.pack(pady=(0, 10), fill="x")
+        btn_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
+
+        btn_imagen = ctk.CTkButton(frame_img, text="Cambiar", command="",
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET)
+        btn_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
+
+        btn_imagen = ctk.CTkButton(frame_img, text="Eliminar", command="",
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET)
+        btn_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
 
         # Frame de fuente
-        frame_fuente = tk.LabelFrame(header_hijo, text="Opciones texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
-        frame_fuente.grid(row=0, column=1, padx=(0, 10), sticky="nsew")
+        frame_fuente = tk.LabelFrame(header_hijo, text="Opciones Texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_fuente.grid(row=0, column=1, padx=(0, 5), sticky="nsew")
         frame_fuente.grid_columnconfigure(0,weight=1)
         frame_fuente.grid_columnconfigure(1,weight=1)
         frame_fuente.grid_columnconfigure(2,weight=1)
@@ -1798,8 +1813,8 @@ class App(ctk.CTk):
         
 
         # Frame de configuración de gráfico
-        frame_configurar_grafico = tk.LabelFrame(header_hijo, text="Opciones graficos", relief="flat", background=self.color.COLOR_FONDO_FRAME)
-        frame_configurar_grafico.grid(row=0, column=2, padx=(0, 10),sticky="nsew")
+        frame_configurar_grafico = tk.LabelFrame(header_hijo, text="Opciones Gráficos", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_configurar_grafico.grid(row=0, column=2, padx=(0, 5),sticky="nsew")
         frame_configurar_grafico.grid_columnconfigure(0,weight=1)
         frame_configurar_grafico.grid_columnconfigure(1,weight=1)
         frame_configurar_grafico.grid_columnconfigure(2,weight=1)
@@ -1829,14 +1844,19 @@ class App(ctk.CTk):
         cbo_efectos.grid(row=1, column=2, padx=5, sticky="nsew")
 
         # Frame de impresión
-        frame_imprimir = ctk.CTkFrame(header_hijo, fg_color=self.color.COLOR_FONDO_FRAME)
-        frame_imprimir.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
+        frame_guardar = tk.LabelFrame(header_hijo, text=" ", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_guardar.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
 
-        btn_add_txt= ctk.CTkButton(frame_imprimir, 
-                                   text="Imprimir",
+        cbo_fondo = ctk.CTkComboBox(frame_guardar, values=["Opción 1", "Opción 2", "Opción 3"],
+                                    button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_fondo.set("Elegir Fondo")
+        cbo_fondo.pack(padx=5, pady=(5, 10), fill="x")
+
+        btn_add_txt= ctk.CTkButton(frame_guardar, 
+                                   text="Guardar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command="")
-        btn_add_txt.pack(fill="x",expand=True, pady=10)
+        btn_add_txt.pack(fill="x",expand=True, pady=(0, 10))
         
          # Frame principal (panel)
         panel = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME)
@@ -1850,15 +1870,14 @@ class App(ctk.CTk):
         menu_lateral = ctk.CTkTabview(panel,fg_color=self.color.COLOR_FONDO_FRAME)
         menu_lateral.pack(side="right", fill="y", padx=(10, 0), pady=10)
 
-        
         hoja_grafico = menu_lateral.add("Gráficos")
         hoja_formato = menu_lateral.add("Formato")
 
         panel_graficos = ctk.CTkFrame(hoja_grafico, fg_color=self.color.COLOR_FONDO_FRAME)
-        panel_graficos.pack(fill="both",  pady=10,expand=True)
+        panel_graficos.pack(fill="both",  pady=10, expand=True)
 
         panel_formato = ctk.CTkFrame(hoja_formato,fg_color=self.color.COLOR_FONDO_FRAME)
-        panel_formato.pack(fill="both",expand=True)
+        panel_formato.pack(fill="both", expand=True)
 
         cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
         cuadro_iconos.pack(pady=(0,20))
