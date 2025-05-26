@@ -96,7 +96,7 @@ class App(ctk.CTk):
             self.try_load_data_from_mysql()
         else:
             print("Abriendo login")
-            login = Login(self)  # le pasas la ventana padre
+            login = Login(self,self.mode)  # le pasas la ventana padre
             login.grab_set()     # hace modal (no permite usar otras ventanas)
             self.wait_window(login)  # bloquea hasta que login se cierre
             
@@ -215,7 +215,7 @@ class App(ctk.CTk):
 
 
     def crear_interfaz(self):
-        self.title("Crear Pestañaas")
+        self.title("Data Science")
         self.geometry("750x600")
         self.minsize(750,600)
 
@@ -1711,17 +1711,16 @@ class App(ctk.CTk):
         header_hijo.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Configurar la expansión de filas y columnas
-        #header_padre.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_padre
         header_padre.grid_columnconfigure(0, weight=1)  # Expande la columna 0 de header_padre
 
         #header_hijo.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_hijo
         header_hijo.grid_columnconfigure(0, weight=1,minsize=120)  # Expande la columna 0 de header_hijo
-        header_hijo.grid_columnconfigure(1, weight=1,minsize=210)  # Expande la columna 1 de header_hijo
+        header_hijo.grid_columnconfigure(1, weight=1,minsize=250)  # Expande la columna 1 de header_hijo
         header_hijo.grid_columnconfigure(2,weight=1,minsize=300)
         header_hijo.grid_columnconfigure(3,weight=1,minsize=120)
 
         # Frame de imagen
-        frame_img = ctk.CTkFrame(header_hijo,fg_color=self.color.COLOR_RELLENO_WIDGET)
+        frame_img = ctk.CTkFrame(header_hijo, fg_color=self.color.COLOR_FONDO_FRAME)
         frame_img.grid(row=0, column=0, padx=(0, 10), sticky="nsew")
 
         cbo_fondo = ctk.CTkComboBox(frame_img, values=["Opción 1", "Opción 2", "Opción 3"],
@@ -1733,78 +1732,111 @@ class App(ctk.CTk):
         btn_imagen.pack(pady=(0, 10), fill="x")
 
         # Frame de fuente
-        frame_fuente = ctk.CTkFrame(header_hijo, corner_radius=10, border_width=2, border_color="#8888aa")
+        frame_fuente = tk.LabelFrame(header_hijo, text="Opciones texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
         frame_fuente.grid(row=0, column=1, padx=(0, 10), sticky="nsew")
         frame_fuente.grid_columnconfigure(0,weight=1)
         frame_fuente.grid_columnconfigure(1,weight=1)
         frame_fuente.grid_columnconfigure(2,weight=1)
-        frame_fuente.grid_columnconfigure(3,weight=1)
+
+        btn_borrar_texto= ctk.CTkButton(frame_fuente, 
+                                   text="Nuevo",
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   command=self.crear_textbox)
+        btn_borrar_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        
+        self.cbo_editar_texto = ctk.CTkComboBox(frame_fuente,
+                                          button_color=self.color.COLOR_RELLENO_WIDGET,
+                                          values=[],
+                                          state="readonly",
+                                          command=self.clean_menu_editar
+                                          )
+        self.cbo_editar_texto.set("Elegir Texto")
+        self.cbo_editar_texto.grid(row=0, column=1, padx=5, pady=(5,10), sticky="nsew")
+        self.is_bold = False
+        self.is_italic = False
+        self.is_underline = False
+
+        btn_borrar_texto= ctk.CTkButton(frame_fuente, 
+                                   text="Eliminar",
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   command="")
+        btn_borrar_texto.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
+
+        
+        fuente_subframe = ctk.CTkFrame(frame_fuente, fg_color=self.color.COLOR_FONDO_FRAME)
+        fuente_subframe.grid(padx=5, pady=(0,10), row=1, column=0, sticky="nsew")
+        fuente_subframe.grid_columnconfigure(0,weight=1)
+        fuente_subframe.grid_columnconfigure(1,weight=1)
+        fuente_subframe.grid_columnconfigure(2,weight=1)
+
+        self.btn_negrita = ctk.CTkButton(fuente_subframe, text="N", font=("Arial", 12, "bold"), width=10,
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    command=self.toggle_bold)
+        self.btn_negrita.grid(padx=0, pady=0,row=1, column=0)
+
+        self.btn_cursiva = ctk.CTkButton(fuente_subframe, text="C", font=("Arial", 12, "italic"), width=10,
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    command=self.toggle_italic)
+        self.btn_cursiva.grid(padx=0, pady=0,row=1, column=1)
+
+        self.btn_subrayado = ctk.CTkButton(fuente_subframe, text="S", font=("Arial", 12, "underline"), width=10,
+                                      fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                      command=self.toggle_underline)
+        self.btn_subrayado.grid(padx=0, pady=0,row=1, column=2)
 
         self.cbo_fuente = ctk.CTkComboBox(frame_fuente, values=self.fuentes_disponibles,
                                      button_color=self.color.COLOR_RELLENO_WIDGET,
                                      command=self.call_update_font)
-        self.cbo_fuente.grid(row=0, column=0, columnspan=3, pady=(0, 10),sticky="nsew")
+        self.cbo_fuente.grid(row=1, column=1, padx=5, pady=(0, 10),sticky="nsew")
 
         self.cbo_size = ctk.CTkComboBox(frame_fuente, values=[str(i) for i in range(10, 25)], width=100,
                                    button_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.call_update_font)
-        self.cbo_size.grid(row=0, column=3, pady=(0, 10), sticky="nsew")
-
-        self.btn_negrita = ctk.CTkButton(frame_fuente, text="N", font=("Arial", 12, "bold"), width=10,
-                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                    command=self.toggle_bold)
-        self.btn_negrita.grid(row=1, column=0)
-
-        self.btn_cursiva = ctk.CTkButton(frame_fuente, text="C", font=("Arial", 12, "italic"), width=10,
-                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                    command=self.toggle_italic)
-        self.btn_cursiva.grid(row=1, column=1)
-
-        self.btn_subrayado = ctk.CTkButton(frame_fuente, text="S", font=("Arial", 12, "underline"), width=10,
-                                      fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                      command=self.toggle_underline)
-        self.btn_subrayado.grid(row=1, column=2)
+        self.cbo_size.grid(row=1, column=2, padx=5, pady=(0, 10), sticky="nsew")
 
         #self.btn_fuente_aplicar =ctk.CTkButton(frame_fuente,text="Aplicar Fuente")
         
 
         # Frame de configuración de gráfico
-        frame_configurar_grafico = ctk.CTkFrame(header_hijo, corner_radius=10, border_width=2, border_color="#8888aa")
+        frame_configurar_grafico = tk.LabelFrame(header_hijo, text="Opciones graficos", relief="flat", background=self.color.COLOR_FONDO_FRAME)
         frame_configurar_grafico.grid(row=0, column=2, padx=(0, 10),sticky="nsew")
         frame_configurar_grafico.grid_columnconfigure(0,weight=1)
         frame_configurar_grafico.grid_columnconfigure(1,weight=1)
         frame_configurar_grafico.grid_columnconfigure(2,weight=1)
 
+        self.cbo_editar_grafico = ctk.CTkComboBox(frame_configurar_grafico,
+                                          button_color=self.color.COLOR_RELLENO_WIDGET,
+                                          values=[],
+                                          state="readonly",
+                                          command=""
+                                          )
+        self.cbo_editar_grafico.set("Elegir Grafico")
+        self.cbo_editar_grafico.grid(row=0, column=0, columnspan=2, padx=5, pady=(5,10), sticky="nsew")
+
+        btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
+                                   text="Eliminar",
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   command="")
+        btn_borrar_grafico.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
+
         cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_relleno.grid(row=1, column=0, sticky="nsew")
+        cbo_relleno.grid(row=1, column=0, padx=5, sticky="nsew")
 
         cbo_contorno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_contorno.grid(row=1, column=1, sticky="nsew")
+        cbo_contorno.grid(row=1, column=1, padx=5, sticky="nsew")
 
         cbo_efectos = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_efectos.grid(row=1, column=2, sticky="nsew")
+        cbo_efectos.grid(row=1, column=2, padx=5, sticky="nsew")
 
         # Frame de impresión
-        frame_imprimir = ctk.CTkFrame(header_hijo,fg_color=self.color.COLOR_RELLENO_WIDGET)
+        frame_imprimir = ctk.CTkFrame(header_hijo, fg_color=self.color.COLOR_FONDO_FRAME)
         frame_imprimir.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
 
         btn_add_txt= ctk.CTkButton(frame_imprimir, 
-                                   text="Cuadro de Texto",
+                                   text="Imprimir",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command=self.crear_textbox)
-        btn_add_txt.pack(fill="x", pady=(0, 10))
-
-        self.cbo_editar = ctk.CTkComboBox(frame_imprimir,
-                                          fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                          values=[],
-                                          state="readonly",
-                                          command=self.clean_menu_editar
-                                          )
-        self.cbo_editar.set("Editar Objeto")
-        self.cbo_editar.pack(fill="x")
-        self.is_bold = False
-        self.is_italic = False
-        self.is_underline = False
+                                   command="")
+        btn_add_txt.pack(fill="x",expand=True, pady=10)
         
          # Frame principal (panel)
         panel = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME)
@@ -1850,12 +1882,6 @@ class App(ctk.CTk):
             self.hojas[f"hoja{i}"].grid_rowconfigure(0, weight=1) # Asegura que la fila 0 de hoja-i se expanda
             self.hojas[f"hoja{i}"].grid_columnconfigure(0, weight=1)  # Asegura que la columna 0 de hoja-i se expanda
 
-
-
-
-        from PIL import Image  # Necesitarás Pillow instalado
-        import os
-        # Cargar imagen con PIL
         ruta_iconos = os.listdir(r'iconos\plots')
         print("--- iconos")
         pill_images =[]
@@ -1879,7 +1905,7 @@ class App(ctk.CTk):
                 text="",
                 image=my_ctk_images[i],
                 width=10, height=10,
-                command=lambda t=tipo: self.crear_objeto(t)
+                command=lambda t=tipo: self.crear_grafico(t)
             )
 
         contador = 0
@@ -1897,7 +1923,7 @@ class App(ctk.CTk):
         lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x")
         lbl_var_x.pack()
         self.cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
-        self.cbo_var_x.pack()
+        self.cbo_var_x.pack(pady=(0,10))
 
         # Agregar componentes de ajustes del gráfico
         ajustes_graficos = {}
@@ -1946,7 +1972,7 @@ class App(ctk.CTk):
         fuente = self.cbo_fuente.get()
         size=int(self.cbo_size.get())
         font = ctk.CTkFont(family=fuente, size=size, weight=weight, slant=slant, underline=underline)
-        value = self.cbo_editar.get()
+        value = self.cbo_editar_texto.get()
         frame = self.frames_movil_text_box[value]
         textbox = frame.winfo_children()[0]  # si solo hay 1 hijo, será el CTkTextbox
 
@@ -1958,7 +1984,7 @@ class App(ctk.CTk):
 
     def clean_menu_editar(self,value):
         """     reinicia a valores perdeterminados el cbo fuente , cbo size , negrita, cursiva, subrrayado"""
-        name_txt =self.cbo_editar.get()
+        name_txt =self.cbo_editar_texto.get()
         textbox = self.frames_movil_text_box[name_txt].winfo_children()[0]
         fuente = textbox.cget("font")
         
@@ -1993,8 +2019,8 @@ class App(ctk.CTk):
         
         frame_movil = MovableResizableFrame(hojas_frame_,600,80)
         self.frames_movil_text_box[f"Cuadro Texto {self.num_cuadro_texto}"] = frame_movil
-        values = [f"Cuadro Texto {self.num_cuadro_texto}"] + list(self.cbo_editar.cget("values"))
-        self.cbo_editar.configure(values=values)
+        values = [f"Cuadro Texto {self.num_cuadro_texto}"] + list(self.cbo_editar_texto.cget("values"))
+        self.cbo_editar_texto.configure(values=values)
         self.num_cuadro_texto+=1
         frame_movil.place(x=100, y=100)
         frame_movil.pack_propagate(False)
@@ -2003,14 +2029,14 @@ class App(ctk.CTk):
         text_box.pack(fill="both", expand=True,padx=10, pady=10)
 
 
-    def crear_objeto(self, tipo_grafico):
+    def crear_grafico(self, tipo_grafico):
         hoja = self.dashboard.get().lower().replace(" ", "")
         hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
         
         frame_movil = MovableResizableFrame(hojas_frame_,300,300)
         self.frames_movil_text_box[f"Gráfico {self.num_grafico}"]=frame_movil
-        values = [f"Gráfico {self.num_cuadro_texto}"] + list(self.cbo_editar.cget("values"))
-        self.cbo_editar.configure(values=values)
+        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
+        self.cbo_editar_grafico.configure(values=values)
         self.num_grafico+=1
         frame_movil.place(x=100, y=100)
         frame_movil.pack_propagate(False)
@@ -2421,7 +2447,7 @@ class App(ctk.CTk):
     def buscar_imagen(self):
         cbo_imagen = filedialog.askopenfilename(
             title="Selecciona Imagen (png,jpg,etc)",
-            filetypes=("Archivos de Imagen","*.png *.jpg *.jpeg *.gif")
+            filetypes=[("Archivos de Imagen","*.png *.jpg *.jpeg *.gif")]
         )
 
 

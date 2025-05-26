@@ -7,13 +7,13 @@ import colores
 
 class Login(ctk.CTkToplevel):
 
-    def __init__(self,parent):
+    def __init__(self,parent,mode):
         super().__init__(parent)
         self.parent = parent
         self.authenticated = False
         self.with_df = False
         self.is_new_user = False
-        self.mode="DRACULA"
+        self.mode=mode
         self.colores = colores.ColorDataFrame().get_colores(self.mode)
         if self.mode == "LIGHT":
             self.color_texto = self.colores.COLOR_LETRA_NORMAL
@@ -166,7 +166,7 @@ class Login(ctk.CTkToplevel):
         btn_mostrar.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_signup = ctk.CTkButton(self.frame_incio,
-                                         text="SIGNUP",
+                                         text="SignUp",
                                          command=lambda:self.__send_signup(
                                              txt_nombre, 
                                              txt_password, 
@@ -177,7 +177,7 @@ class Login(ctk.CTkToplevel):
         btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_singin = ctk.CTkButton(self.frame_incio,
-                                        text="SIGNIN",
+                                        text="SignIn",
                                         command=self.__frame_singin
                                         )
         btn_singin.grid(row=5,column=1,padx=(0,10),pady=(0,20))
@@ -242,7 +242,7 @@ class Login(ctk.CTkToplevel):
 
 
         btn_signin = ctk.CTkButton(self.frame_incio,
-                                         text="SIGNIN",
+                                         text="SignIn",
                                          command=lambda: self.__send_signin(
                                              txt_nombre,
                                              txt_password
@@ -253,7 +253,7 @@ class Login(ctk.CTkToplevel):
         btn_signin.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
 
         btn_signup = ctk.CTkButton(self.frame_incio,
-                                        text="SIGNUP",
+                                        text="SignUp",
                                         command=self.__frame_signup
                                         )
         btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
@@ -289,11 +289,11 @@ class Login(ctk.CTkToplevel):
 
         self.frame_incio.pack()
         
-        self.btn_signup = ctk.CTkButton(self.frame_incio,text="signup",command=self.__frame_signup)
+        self.btn_signup = ctk.CTkButton(self.frame_incio,text="SignUp",command=self.__frame_signup)
         self.btn_signup.pack(pady=(0,20))
         self.btn_signup.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)
         
-        self.btn_sigin = ctk.CTkButton(self.frame_incio,text="signin",command= self.__frame_singin)
+        self.btn_sigin = ctk.CTkButton(self.frame_incio,text="SignIn",command= self.__frame_singin)
         self.btn_sigin.pack()
         self.btn_sigin.configure(fg_color=self.colores.COLOR_RELLENO_WIDGET)   
 
