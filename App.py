@@ -2174,9 +2174,9 @@ class App(ctk.CTk):
 
         imagen_pil = Image.open(ruta)
         imagen_pil.thumbnail((280, 280))
-        img = ImageTk.PhotoImage(imagen_pil)
+        img_ctk = ctk.CTkImage(light_image=imagen_pil, size=imagen_pil.size)
 
-        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")  # text="" para evitar mostrar texto por defecto
+        label_imagen = ctk.CTkLabel(frame_movil, image=img_ctk, text="")  # text="" para evitar mostrar texto por defecto
         label_imagen.image = img
         label_imagen.pack(expand=True)
 
