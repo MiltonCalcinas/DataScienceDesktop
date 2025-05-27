@@ -32,7 +32,7 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
 import tkinter.font as tkFont
 import csv
-from functools import partial
+import colorsys 
 
 def sesion_guardada():
     print("---Verificndo auth_token---")
@@ -2173,10 +2173,10 @@ class App(ctk.CTk):
         frame_movil.pack_propagate(False)
 
         imagen_pil = Image.open(ruta)
-        imagen_pil.thumbnail((280, 280))
-        img_ctk = ctk.CTkImage(light_image=imagen_pil, size=imagen_pil.size)
+        imagen_pil.thumbnail((200, 200))
+        img = ctk.CTkImage(light_image=imagen_pil, size=imagen_pil.size)
 
-        label_imagen = ctk.CTkLabel(frame_movil, image=img_ctk, text="")  # text="" para evitar mostrar texto por defecto
+        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")  # text="" para evitar mostrar texto por defecto
         label_imagen.image = img
         label_imagen.pack(expand=True)
 
@@ -2340,8 +2340,23 @@ class App(ctk.CTk):
                     pass  # algunos widgets pueden no soportar esto
 
         elif ajuste == "Relleno":
+            # Valor entre 0 y 200
+            h = min(valor * 1.8, 360)  # Escalar a [0, 360]
+            
+            # Convertir HSV → RGB
+            r, g, b = colorsys.hsv_to_rgb(h / 360, 1.0, 1.0)
+
+            # Si el valor es mayor a 180, mezclamos hacia blanco
+            if valor > 180:
+                t = (valor - 180) / 20  # de 0 a 1
+                r = r * (1 - t) + 1 * t
+                g = g * (1 - t) + 1 * t
+                b = b * (1 - t) + 1 * t
+
+            # RGB → HEX
+            hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
             # Esto puede simularse como cambio de color (ejemplo sencillo)
-            frame.configure(fg_color=f"#ff{int(valor):02x}{int(100):02x}")
+            frame.configure(fg_color=hex_color)
 
         elif ajuste == "Sombra":
             # No hay sombra en CTkFrame por defecto. Puedes usar un color más oscuro para simular.
