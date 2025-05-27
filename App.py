@@ -13,7 +13,7 @@ import json
 import config
 import colores
 import os
-from PIL import Image
+from PIL import Image, ImageTk
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -1725,26 +1725,26 @@ class App(ctk.CTk):
         frame_img.grid_columnconfigure(0, weight=1)
         frame_img.grid_columnconfigure(1, weight=1)
         
-        self.cbo_editar_grafico = ctk.CTkComboBox(frame_img,
+        self.cbo_editar_imagen = ctk.CTkComboBox(frame_img,
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
                                           values=[],
                                           state="readonly",
                                           command=""
                                           )
-        self.cbo_editar_grafico.set("Elegir Grafico")
-        self.cbo_editar_grafico.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        self.cbo_editar_imagen.set("Elegir Imagen")
+        self.cbo_editar_imagen.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.buscar_imagen,
+        btn_crear_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.crear_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
+        btn_crear_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Cambiar", command="",
+        btn_cambiar_imagen = ctk.CTkButton(frame_img, text="Cambiar", command=self.cambiar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
+        btn_cambiar_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Eliminar", command="",
+        btn_borrar_imagen = ctk.CTkButton(frame_img, text="Eliminar", command=self.eliminar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
+        btn_borrar_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
 
         # Frame de fuente
         frame_fuente = tk.LabelFrame(header_hijo, text="Opciones Texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
@@ -1753,11 +1753,11 @@ class App(ctk.CTk):
         frame_fuente.grid_columnconfigure(1,weight=1)
         frame_fuente.grid_columnconfigure(2,weight=1)
 
-        btn_borrar_texto= ctk.CTkButton(frame_fuente, 
+        btn_crear_texto= ctk.CTkButton(frame_fuente, 
                                    text="Nuevo",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.crear_textbox)
-        btn_borrar_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        btn_crear_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
         
         self.cbo_editar_texto = ctk.CTkComboBox(frame_fuente,
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
@@ -1774,7 +1774,7 @@ class App(ctk.CTk):
         btn_borrar_texto= ctk.CTkButton(frame_fuente, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command="")
+                                   command=self.eliminar_textbox)
         btn_borrar_texto.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
 
         
@@ -1831,7 +1831,7 @@ class App(ctk.CTk):
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command="")
+                                   command=self.eliminar_grafico)
         btn_borrar_grafico.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
 
         cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
@@ -1856,7 +1856,7 @@ class App(ctk.CTk):
                                    text="Guardar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command="")
-        btn_add_txt.pack(fill="x",expand=True, pady=(0, 10))
+        btn_add_txt.pack(fill="x",expand=True, padx=5,pady=(0, 10))
         
          # Frame principal (panel)
         panel = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME)
@@ -1955,10 +1955,12 @@ class App(ctk.CTk):
             ajustes_graficos[f"sld_{ajustes_nombre[i]}"] = ctk.CTkSlider(panel_formato)
             ajustes_graficos[f"sld_{ajustes_nombre[i]}"].grid(row=i,column=1)
 
-        self.frames_movil_graficos = {}
         self.frames_movil_text_box = {}
+        self.frames_movil_graficos = {}
+        self.frames_movil_imagen = {}
         self.num_cuadro_texto = 1
         self.num_grafico =1
+        self.num_imagen = 1
 
     # def set_texto(self):
     #     """         llamar al pichar boton aplicar    """
@@ -1983,7 +1985,7 @@ class App(ctk.CTk):
         ]
         self.fuentes_disponibles =fuentes_populares
 
-    def update_font(self):      # aplica sobre el objeto seleccionado en self.cbo_editar
+    def update_font(self):      # aplica sobre el objeto seleccionado en self.cbo_editar_texto
         
         weight = "bold" if self.is_bold else "normal"
         slant = "italic" if self.is_italic else "roman"
@@ -2047,13 +2049,26 @@ class App(ctk.CTk):
         text_box = ctk.CTkTextbox(frame_movil )
         text_box.pack(fill="both", expand=True,padx=10, pady=10)
 
+    def eliminar_textbox(self):
+        name_txt = self.cbo_editar_texto.get()  # Obtiene el nombre del textbox seleccionado
+        if name_txt in self.frames_movil_text_box:
+            frame = self.frames_movil_text_box[name_txt]
+            frame.destroy()  # Destruye el frame contenedor (y por ende el textbox)
+            del self.frames_movil_text_box[name_txt]  # Elimina la referencia del diccionario
+
+            # Actualiza el combobox para remover el nombre eliminado
+            values = list(self.cbo_editar_texto.cget("values"))
+            if name_txt in values:
+                values.remove(name_txt)
+                self.cbo_editar_texto.configure(values=values)
+                self.cbo_editar_texto.set('')  # Limpia la selección actual
 
     def crear_grafico(self, tipo_grafico):
         hoja = self.dashboard.get().lower().replace(" ", "")
         hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
         
         frame_movil = MovableResizableFrame(hojas_frame_,300,300)
-        self.frames_movil_text_box[f"Gráfico {self.num_grafico}"]=frame_movil
+        self.frames_movil_graficos[f"Gráfico {self.num_grafico}"]=frame_movil
         values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
         self.cbo_editar_grafico.configure(values=values)
         self.num_grafico+=1
@@ -2105,7 +2120,86 @@ class App(ctk.CTk):
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
 
+    def eliminar_grafico(self):
+        name_grafico = self.cbo_editar_grafico.get()  # Obtiene el nombre del gráfico seleccionado
+        if name_grafico in self.frames_movil_graficos:
+            frame = self.frames_movil_graficos[name_grafico]
+            frame.destroy()  # Elimina el contenedor del gráfico
+            del self.frames_movil_graficos[name_grafico]  # Borra del diccionario
 
+            # Actualiza el combobox para remover el nombre eliminado
+            values = list(self.cbo_editar_grafico.cget("values"))
+            if name_grafico in values:
+                values.remove(name_grafico)
+                self.cbo_editar_grafico.configure(values=values)
+                self.cbo_editar_grafico.set('')  # Limpia la selección actual
+                
+    def crear_imagen(self):
+        ruta = self.buscar_imagen()
+        if not ruta:
+            return
+
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+
+        frame_movil = MovableResizableFrame(hojas_frame_, 300, 300)
+        nombre_imagen = f"Imagen {self.num_imagen}"
+        self.frames_movil_imagen[nombre_imagen] = frame_movil
+
+        values = [nombre_imagen] + list(self.cbo_editar_imagen.cget("values"))
+        self.cbo_editar_imagen.configure(values=values)
+        self.cbo_editar_imagen.set(nombre_imagen)
+        self.num_imagen += 1
+
+        frame_movil.place(x=100, y=100)
+        frame_movil.pack_propagate(False)
+
+        imagen_pil = Image.open(ruta)
+        imagen_pil.thumbnail((280, 280))
+        img = ImageTk.PhotoImage(imagen_pil)
+
+        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")  # text="" para evitar mostrar texto por defecto
+        label_imagen.image = img
+        label_imagen.pack(expand=True)
+
+        frame_movil.ruta = ruta
+        
+    def cambiar_imagen(self):
+        nombre = self.cbo_editar_imagen.get()
+        if nombre not in self.frames_movil_imagen:
+            return
+
+        ruta = self.buscar_imagen()
+        if not ruta:
+            return
+
+        frame = self.frames_movil_imagen[nombre]
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        imagen_pil = Image.open(ruta)
+        imagen_pil.thumbnail((280, 280))
+        img = ImageTk.PhotoImage(imagen_pil)
+
+        label_imagen = ctk.CTkLabel(frame, image=img, text="")
+        label_imagen.image = img
+        label_imagen.pack(expand=True)
+
+        frame.ruta = ruta
+
+    def eliminar_imagen(self):
+        nombre = self.cbo_editar_imagen.get()
+        if nombre in self.frames_movil_imagen:
+            frame = self.frames_movil_imagen[nombre]
+            frame.destroy()
+            del self.frames_movil_imagen[nombre]
+
+            # Actualiza el combobox
+            values = list(self.cbo_editar_imagen.cget("values"))
+            if nombre in values:
+                values.remove(nombre)
+                self.cbo_editar_imagen.configure(values=values)
+                self.cbo_editar_imagen.set('')
 
     def __form_task(self):
         
@@ -2464,7 +2558,7 @@ class App(ctk.CTk):
             )
 
     def buscar_imagen(self):
-        cbo_imagen = filedialog.askopenfilename(
+        return filedialog.askopenfilename(
             title="Selecciona Imagen (png,jpg,etc)",
             filetypes=[("Archivos de Imagen","*.png *.jpg *.jpeg *.gif")]
         )
