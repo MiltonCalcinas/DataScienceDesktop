@@ -1949,7 +1949,7 @@ class App(ctk.CTk):
 
         # Agregar componentes de ajustes del gráfico
         ajustes_graficos = {}
-        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Sombra"]
+        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Sombra"]
         for i in range(len(ajustes_nombre)):
             nombre = ajustes_nombre[i]
 
@@ -2338,6 +2338,10 @@ class App(ctk.CTk):
                     frame.configure(corner_radius=int(valor / 2))
                 except:
                     pass  # algunos widgets pueden no soportar esto
+
+        elif ajuste == "Relleno":
+            # Esto puede simularse como cambio de color (ejemplo sencillo)
+            frame.configure(fg_color=f"#ff{int(valor):02x}{int(100):02x}")
 
         elif ajuste == "Sombra":
             # No hay sombra en CTkFrame por defecto. Puedes usar un color más oscuro para simular.
