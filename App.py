@@ -2082,30 +2082,22 @@ class App(ctk.CTk):
                 self.cbo_editar_texto.set('')  # Limpia la selección actual
 
     def crear_grafico(self, tipo_grafico):
-        hoja = self.dashboard.get().lower().replace(" ", "")
-        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
-        
-        frame_movil = MovableResizableFrame(hojas_frame_,300,300)
-        self.frames_movil_graficos[f"Gráfico {self.num_grafico}"]=frame_movil
-        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
-        self.cbo_editar_grafico.configure(values=values)
-        self.num_grafico+=1
-        frame_movil.place(x=100, y=100)
-        frame_movil.pack_propagate(False)
-
-
-        fig, ax = plt.subplots()
-
         # Obtener variables seleccionadas (asegúrate que estos atributos existen en tu clase)
         var_x = self.cbo_var_x.get() if hasattr(self, "cbo_var_x") else None
         var_y = self.cbo_var_y.get() if hasattr(self, "cbo_var_y") else None
 
         # Control básico si no se seleccionan variables
-        if not var_x and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
-            ax.text(0.5, 0.5, "Selecciona variable X", ha="center", va="center")
-        elif not var_y and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
-            ax.text(0.5, 0.5, "Selecciona variable Y", ha="center", va="center")
+        if not var_y and tipo_grafico == "Bigote":
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje Y.")
+            return
+        elif not var_x and tipo_grafico == "Tarta":
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje X.")
+            return
+        elif (not var_x or not var_y) and tipo_grafico not in ["Tarta", "Bigote"]:
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Ejes X e Y.")
+            return
         else:
+            fig, ax = plt.subplots()
             try:
                 if tipo_grafico == "Barra":
                     # Ejemplo: barras de la variable Y agrupadas por X
@@ -2132,7 +2124,18 @@ class App(ctk.CTk):
                     ax.boxplot(data, labels=categories)
                     ax.set_title("Bigote por Categoría")
             except Exception as e:
-                ax.text(0.5, 0.5, f"Error:\n{str(e)}", ha="center", va="center")
+                messagebox.showerror("Error",f"Error:\n{str(e)}")
+                return
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+        
+        frame_movil = MovableResizableFrame(hojas_frame_,300,300)
+        self.frames_movil_graficos[f"Gráfico {self.num_grafico}"]=frame_movil
+        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
+        self.cbo_editar_grafico.configure(values=values)
+        self.num_grafico+=1
+        frame_movil.place(x=100, y=100)
+        frame_movil.pack_propagate(False)
 
         self.canvas = FigureCanvasTkAgg(fig, master=frame_movil)
         self.canvas.draw()
