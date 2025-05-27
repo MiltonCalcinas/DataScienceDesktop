@@ -2173,13 +2173,16 @@ class App(ctk.CTk):
         frame_movil.pack_propagate(False)
 
         imagen_pil = Image.open(ruta)
+        frame_movil.imagen_original = imagen_pil
+
         imagen_pil.thumbnail((200, 200))
         img = ctk.CTkImage(light_image=imagen_pil, size=imagen_pil.size)
 
-        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")  # text="" para evitar mostrar texto por defecto
+        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")
         label_imagen.image = img
         label_imagen.pack(expand=True)
 
+        frame_movil.label_imagen = label_imagen
         frame_movil.ruta = ruta
         
     def cambiar_imagen(self):
@@ -2318,6 +2321,15 @@ class App(ctk.CTk):
             frame.configure(width=new_size, height=new_size)
             frame.place_configure(width=new_size, height=new_size)
 
+            if tipo == "imagen":
+                # Redimensionar la imagen original para que encaje en el nuevo tamaño
+                imagen_resized = frame.imagen_original.copy()
+                imagen_resized.thumbnail((new_size, new_size))
+
+                img = ctk.CTkImage(light_image=imagen_resized, size=imagen_resized.size)
+                frame.label_imagen.configure(image=img)
+                frame.label_imagen.image = img
+
         elif ajuste == "Width":
             current = frame.winfo_height()
             frame.configure(width=100 + valor)
@@ -2355,8 +2367,16 @@ class App(ctk.CTk):
 
             # RGB → HEX
             hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
-            # Esto puede simularse como cambio de color (ejemplo sencillo)
-            frame.configure(fg_color=hex_color)
+            # Aplica el color al frame
+            try:
+                frame.configure(fg_color=hex_color)
+            except Exception:
+                pass  # En caso de que no tenga fg_color
+            for hijo in frame.winfo_children():
+                try:
+                    hijo.configure(fg_color=hex_color)
+                except Exception:
+                    pass
 
         elif ajuste == "Sombra":
             # No hay sombra en CTkFrame por defecto. Puedes usar un color más oscuro para simular.
