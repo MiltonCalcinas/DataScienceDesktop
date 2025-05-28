@@ -13,7 +13,7 @@ import json
 import config
 import colores
 import os
-from PIL import Image
+from PIL import Image, ImageTk
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -31,6 +31,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
 import tkinter.font as tkFont
+import csv
+import colorsys 
 
 def sesion_guardada():
     print("---Verificndo auth_token---")
@@ -1725,26 +1727,26 @@ class App(ctk.CTk):
         frame_img.grid_columnconfigure(0, weight=1)
         frame_img.grid_columnconfigure(1, weight=1)
         
-        self.cbo_editar_grafico = ctk.CTkComboBox(frame_img,
+        self.cbo_editar_imagen = ctk.CTkComboBox(frame_img,
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
                                           values=[],
                                           state="readonly",
-                                          command=""
+                                          command=lambda v: self.seleccionar_elemento("imagen", v)
                                           )
-        self.cbo_editar_grafico.set("Elegir Grafico")
-        self.cbo_editar_grafico.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        self.cbo_editar_imagen.set("Elegir Imagen")
+        self.cbo_editar_imagen.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.buscar_imagen,
+        btn_crear_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.crear_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
+        btn_crear_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Cambiar", command="",
+        btn_cambiar_imagen = ctk.CTkButton(frame_img, text="Cambiar", command=self.cambiar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
+        btn_cambiar_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
 
-        btn_imagen = ctk.CTkButton(frame_img, text="Eliminar", command="",
+        btn_borrar_imagen = ctk.CTkButton(frame_img, text="Eliminar", command=self.eliminar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
+        btn_borrar_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
 
         # Frame de fuente
         frame_fuente = tk.LabelFrame(header_hijo, text="Opciones Texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
@@ -1753,17 +1755,17 @@ class App(ctk.CTk):
         frame_fuente.grid_columnconfigure(1,weight=1)
         frame_fuente.grid_columnconfigure(2,weight=1)
 
-        btn_borrar_texto= ctk.CTkButton(frame_fuente, 
+        btn_crear_texto= ctk.CTkButton(frame_fuente, 
                                    text="Nuevo",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.crear_textbox)
-        btn_borrar_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        btn_crear_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
         
         self.cbo_editar_texto = ctk.CTkComboBox(frame_fuente,
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
                                           values=[],
                                           state="readonly",
-                                          command=self.clean_menu_editar
+                                          command=lambda v: self.seleccionar_elemento("texto", v)
                                           )
         self.cbo_editar_texto.set("Elegir Texto")
         self.cbo_editar_texto.grid(row=0, column=1, padx=5, pady=(5,10), sticky="nsew")
@@ -1774,7 +1776,7 @@ class App(ctk.CTk):
         btn_borrar_texto= ctk.CTkButton(frame_fuente, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command="")
+                                   command=self.eliminar_textbox)
         btn_borrar_texto.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
 
         
@@ -1823,7 +1825,7 @@ class App(ctk.CTk):
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
                                           values=[],
                                           state="readonly",
-                                          command=""
+                                          command=lambda v: self.seleccionar_elemento("grafico", v)
                                           )
         self.cbo_editar_grafico.set("Elegir Grafico")
         self.cbo_editar_grafico.grid(row=0, column=0, columnspan=2, padx=5, pady=(5,10), sticky="nsew")
@@ -1831,7 +1833,7 @@ class App(ctk.CTk):
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command="")
+                                   command=self.eliminar_grafico)
         btn_borrar_grafico.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
 
         cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
@@ -1844,19 +1846,20 @@ class App(ctk.CTk):
         cbo_efectos.grid(row=1, column=2, padx=5, sticky="nsew")
 
         # Frame de impresión
-        frame_guardar = tk.LabelFrame(header_hijo, text=" ", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_guardar = tk.LabelFrame(header_hijo, text="Opciones Hoja", relief="flat", background=self.color.COLOR_FONDO_FRAME)
         frame_guardar.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
 
         cbo_fondo = ctk.CTkComboBox(frame_guardar, values=["Opción 1", "Opción 2", "Opción 3"],
-                                    button_color=self.color.COLOR_RELLENO_WIDGET)
+                                    button_color=self.color.COLOR_RELLENO_WIDGET,
+                                    command=self.cambiar_fondo_hoja)
         cbo_fondo.set("Elegir Fondo")
         cbo_fondo.pack(padx=5, pady=(5, 10), fill="x")
 
         btn_add_txt= ctk.CTkButton(frame_guardar, 
                                    text="Guardar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
-                                   command="")
-        btn_add_txt.pack(fill="x",expand=True, pady=(0, 10))
+                                   command=self.guardar_hoja_csv)
+        btn_add_txt.pack(fill="x",expand=True, padx=5,pady=(0, 10))
         
          # Frame principal (panel)
         panel = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME)
@@ -1948,17 +1951,21 @@ class App(ctk.CTk):
         ajustes_graficos = {}
         ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Sombra"]
         for i in range(len(ajustes_nombre)):
+            nombre = ajustes_nombre[i]
 
-            ajustes_graficos[f"lbl_{ajustes_nombre[i]}"] = ctk.CTkLabel(panel_formato,text=ajustes_nombre[i])
-            ajustes_graficos[f"lbl_{ajustes_nombre[i]}"].grid(row=i,column=0)
+            ajustes_graficos[f"lbl_{nombre}"] = ctk.CTkLabel(panel_formato, text=nombre)
+            ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0)
 
-            ajustes_graficos[f"sld_{ajustes_nombre[i]}"] = ctk.CTkSlider(panel_formato)
-            ajustes_graficos[f"sld_{ajustes_nombre[i]}"].grid(row=i,column=1)
+            ajustes_graficos[f"sld_{nombre}"] = ctk.CTkSlider(panel_formato, from_=0, to=200,
+                                                            command=lambda valor, ajuste=nombre: self.aplicar_formato(valor, ajuste))
+            ajustes_graficos[f"sld_{nombre}"].grid(row=i, column=1)
 
-        self.frames_movil_graficos = {}
         self.frames_movil_text_box = {}
+        self.frames_movil_graficos = {}
+        self.frames_movil_imagen = {}
         self.num_cuadro_texto = 1
         self.num_grafico =1
+        self.num_imagen = 1
 
     # def set_texto(self):
     #     """         llamar al pichar boton aplicar    """
@@ -1983,7 +1990,7 @@ class App(ctk.CTk):
         ]
         self.fuentes_disponibles =fuentes_populares
 
-    def update_font(self):      # aplica sobre el objeto seleccionado en self.cbo_editar
+    def update_font(self):      # aplica sobre el objeto seleccionado en self.cbo_editar_texto
         
         weight = "bold" if self.is_bold else "normal"
         slant = "italic" if self.is_italic else "roman"
@@ -2000,6 +2007,19 @@ class App(ctk.CTk):
     def call_update_font(self,value):
         self.update_font()
 
+    def seleccionar_elemento(self, tipo, value):
+        if tipo == "texto":
+            self.cbo_editar_grafico.set("")
+            self.cbo_editar_imagen.set("")
+            self.clean_menu_editar(value)
+
+        elif tipo == "grafico":
+            self.cbo_editar_texto.set("")
+            self.cbo_editar_imagen.set("")
+
+        elif tipo == "imagen":
+            self.cbo_editar_texto.set("")
+            self.cbo_editar_grafico.set("")
 
     def clean_menu_editar(self,value):
         """     reinicia a valores perdeterminados el cbo fuente , cbo size , negrita, cursiva, subrrayado"""
@@ -2047,32 +2067,37 @@ class App(ctk.CTk):
         text_box = ctk.CTkTextbox(frame_movil )
         text_box.pack(fill="both", expand=True,padx=10, pady=10)
 
+    def eliminar_textbox(self):
+        name_txt = self.cbo_editar_texto.get()  # Obtiene el nombre del textbox seleccionado
+        if name_txt in self.frames_movil_text_box:
+            frame = self.frames_movil_text_box[name_txt]
+            frame.destroy()  # Destruye el frame contenedor (y por ende el textbox)
+            del self.frames_movil_text_box[name_txt]  # Elimina la referencia del diccionario
+
+            # Actualiza el combobox para remover el nombre eliminado
+            values = list(self.cbo_editar_texto.cget("values"))
+            if name_txt in values:
+                values.remove(name_txt)
+                self.cbo_editar_texto.configure(values=values)
+                self.cbo_editar_texto.set('')  # Limpia la selección actual
 
     def crear_grafico(self, tipo_grafico):
-        hoja = self.dashboard.get().lower().replace(" ", "")
-        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
-        
-        frame_movil = MovableResizableFrame(hojas_frame_,300,300)
-        self.frames_movil_text_box[f"Gráfico {self.num_grafico}"]=frame_movil
-        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
-        self.cbo_editar_grafico.configure(values=values)
-        self.num_grafico+=1
-        frame_movil.place(x=100, y=100)
-        frame_movil.pack_propagate(False)
-
-
-        fig, ax = plt.subplots()
-
         # Obtener variables seleccionadas (asegúrate que estos atributos existen en tu clase)
         var_x = self.cbo_var_x.get() if hasattr(self, "cbo_var_x") else None
         var_y = self.cbo_var_y.get() if hasattr(self, "cbo_var_y") else None
 
         # Control básico si no se seleccionan variables
-        if not var_x and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
-            ax.text(0.5, 0.5, "Selecciona variable X", ha="center", va="center")
-        elif not var_y and tipo_grafico not in ["Tarta", "Bigote", "Bigote por categoría"]:
-            ax.text(0.5, 0.5, "Selecciona variable Y", ha="center", va="center")
+        if not var_y and tipo_grafico == "Bigote":
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje Y.")
+            return
+        elif not var_x and tipo_grafico == "Tarta":
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje X.")
+            return
+        elif (not var_x or not var_y) and tipo_grafico not in ["Tarta", "Bigote"]:
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Ejes X e Y.")
+            return
         else:
+            fig, ax = plt.subplots()
             try:
                 if tipo_grafico == "Barra":
                     # Ejemplo: barras de la variable Y agrupadas por X
@@ -2099,13 +2124,267 @@ class App(ctk.CTk):
                     ax.boxplot(data, labels=categories)
                     ax.set_title("Bigote por Categoría")
             except Exception as e:
-                ax.text(0.5, 0.5, f"Error:\n{str(e)}", ha="center", va="center")
+                messagebox.showerror("Error",f"Error:\n{str(e)}")
+                return
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+        
+        frame_movil = MovableResizableFrame(hojas_frame_,300,300)
+        self.frames_movil_graficos[f"Gráfico {self.num_grafico}"]=frame_movil
+        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
+        self.cbo_editar_grafico.configure(values=values)
+        self.num_grafico+=1
+        frame_movil.place(x=100, y=100)
+        frame_movil.pack_propagate(False)
 
         self.canvas = FigureCanvasTkAgg(fig, master=frame_movil)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
 
+    def eliminar_grafico(self):
+        name_grafico = self.cbo_editar_grafico.get()  # Obtiene el nombre del gráfico seleccionado
+        if name_grafico in self.frames_movil_graficos:
+            frame = self.frames_movil_graficos[name_grafico]
+            frame.destroy()  # Elimina el contenedor del gráfico
+            del self.frames_movil_graficos[name_grafico]  # Borra del diccionario
 
+            # Actualiza el combobox para remover el nombre eliminado
+            values = list(self.cbo_editar_grafico.cget("values"))
+            if name_grafico in values:
+                values.remove(name_grafico)
+                self.cbo_editar_grafico.configure(values=values)
+                self.cbo_editar_grafico.set('')  # Limpia la selección actual
+                
+    def crear_imagen(self):
+        ruta = self.buscar_imagen()
+        if not ruta:
+            return
+
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+
+        frame_movil = MovableResizableFrame(hojas_frame_, 300, 300)
+        nombre_imagen = f"Imagen {self.num_imagen}"
+        self.frames_movil_imagen[nombre_imagen] = frame_movil
+
+        values = [nombre_imagen] + list(self.cbo_editar_imagen.cget("values"))
+        self.cbo_editar_imagen.configure(values=values)
+        self.cbo_editar_imagen.set(nombre_imagen)
+        self.num_imagen += 1
+
+        frame_movil.place(x=100, y=100)
+        frame_movil.pack_propagate(False)
+
+        imagen_pil = Image.open(ruta)
+        frame_movil.imagen_original = imagen_pil
+
+        imagen_pil.thumbnail((200, 200))
+        img = ctk.CTkImage(light_image=imagen_pil, size=imagen_pil.size)
+
+        label_imagen = ctk.CTkLabel(frame_movil, image=img, text="")
+        label_imagen.image = img
+        label_imagen.pack(expand=True)
+
+        frame_movil.label_imagen = label_imagen
+        frame_movil.ruta = ruta
+        
+    def cambiar_imagen(self):
+        nombre = self.cbo_editar_imagen.get()
+        if nombre not in self.frames_movil_imagen:
+            return
+
+        ruta = self.buscar_imagen()
+        if not ruta:
+            return
+
+        frame = self.frames_movil_imagen[nombre]
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        imagen_pil = Image.open(ruta)
+        imagen_pil.thumbnail((280, 280))
+        img = ImageTk.PhotoImage(imagen_pil)
+
+        label_imagen = ctk.CTkLabel(frame, image=img, text="")
+        label_imagen.image = img
+        label_imagen.pack(expand=True)
+
+        frame.ruta = ruta
+
+    def eliminar_imagen(self):
+        nombre = self.cbo_editar_imagen.get()
+        if nombre in self.frames_movil_imagen:
+            frame = self.frames_movil_imagen[nombre]
+            frame.destroy()
+            del self.frames_movil_imagen[nombre]
+
+            # Actualiza el combobox
+            values = list(self.cbo_editar_imagen.cget("values"))
+            if nombre in values:
+                values.remove(nombre)
+                self.cbo_editar_imagen.configure(values=values)
+                self.cbo_editar_imagen.set('')
+    
+    def cambiar_fondo_hoja(self, opcion):
+        # Asocia opciones a colores
+        colores = {
+            "Opción 1": "#ffffff",  # Blanco
+            "Opción 2": "#f0f0f0",  # Gris claro
+            "Opción 3": "#e6f7ff"   # Azul muy claro
+        }
+
+        color_fondo = colores.get(opcion)
+        if not color_fondo:
+            return
+
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        frame_hoja = self.hojas_frame.get(f"{hoja}_frame")
+        
+        if frame_hoja:
+            frame_hoja.configure(fg_color=color_fondo)
+        else:
+            messagebox.showerror("Error", "No se pudo encontrar la hoja actual.")
+    
+    def guardar_hoja_csv(self):
+        hoja = self.dashboard.get().lower().replace(" ", "")
+        frame_hoja = self.hojas_frame.get(f"{hoja}_frame")
+
+        if not frame_hoja:
+            messagebox.showerror("Error", "No se encontró la hoja actual.")
+            return
+
+        datos = []
+
+        # 🔤 Textos
+        for nombre, frame in self.frames_movil_text_box.items():
+            if frame.master == frame_hoja:
+                textbox = frame.winfo_children()[0]
+                contenido = textbox.get("0.0", "end-1c")
+                datos.append(["Texto", nombre, contenido])
+
+        # 📈 Gráficos
+        for nombre, frame in self.frames_movil_graficos.items():
+            if frame.master == frame_hoja:
+                # Intenta identificar el tipo de gráfico desde el título del eje
+                fig = self.canvas.figure
+                title = fig.axes[0].get_title() if fig.axes else "Gráfico"
+                datos.append(["Gráfico", nombre, f"Tipo: {title}"])
+
+        # 🖼️ Imágenes
+        for nombre, frame in self.frames_movil_imagen.items():
+            if frame.master == frame_hoja:
+                ruta = getattr(frame, "ruta", "Desconocida")
+                datos.append(["Imagen", nombre, f"Ruta: {ruta}"])
+
+        if not datos:
+            messagebox.showerror("Error", "No hay elementos en esta hoja.")
+            return
+
+        # 📝 Guardar en CSV
+        ruta_archivo = filedialog.asksaveasfilename(defaultextension=".csv",
+                                                    filetypes=[("CSV files", "*.csv")],
+                                                    title="Guardar hoja como CSV")
+
+        if not ruta_archivo:
+            return  # Cancelado por el usuario
+
+        with open(ruta_archivo, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Tipo", "Nombre", "Contenido"])
+            writer.writerows(datos)
+
+        messagebox.showerror("Error", f"Hoja guardada en {ruta_archivo}")
+
+    def aplicar_formato(self, valor, ajuste):
+        valor = int(valor)
+
+        seleccionado = self.cbo_editar_texto.get()
+        tipo = "texto"
+        if not seleccionado:
+            seleccionado = self.cbo_editar_grafico.get()
+            tipo = "grafico"
+        if not seleccionado:
+            seleccionado = self.cbo_editar_imagen.get()
+            tipo = "imagen"
+        if not seleccionado:
+            return
+
+        if tipo == "texto":
+            frame = self.frames_movil_text_box.get(seleccionado)
+        elif tipo == "grafico":
+            frame = self.frames_movil_graficos.get(seleccionado)
+        elif tipo == "imagen":
+            frame = self.frames_movil_imagen.get(seleccionado)
+        else:
+            return
+
+        # Aplica cambios según el ajuste
+        if ajuste == "Size":
+            new_size = 100 + valor  # base + valor
+            frame.configure(width=new_size, height=new_size)
+            frame.place_configure(width=new_size, height=new_size)
+
+            if tipo == "imagen":
+                # Redimensionar la imagen original para que encaje en el nuevo tamaño
+                imagen_resized = frame.imagen_original.copy()
+                imagen_resized.thumbnail((new_size, new_size))
+
+                img = ctk.CTkImage(light_image=imagen_resized, size=imagen_resized.size)
+                frame.label_imagen.configure(image=img)
+                frame.label_imagen.image = img
+
+        elif ajuste == "Width":
+            current = frame.winfo_height()
+            frame.configure(width=100 + valor)
+            frame.place_configure(width=100 + valor, height=current)
+
+        elif ajuste == "Height":
+            current = frame.winfo_width()
+            frame.configure(height=100 + valor)
+            frame.place_configure(width=current, height=100 + valor)
+
+        elif ajuste == "Border":
+            frame.configure(border_width=int(valor / 10))  # escala
+
+        elif ajuste == "Redondear":
+            # Asume que el frame tiene atributo corner_radius si es CTkFrame personalizado
+            if hasattr(frame, 'configure'):
+                try:
+                    frame.configure(corner_radius=int(valor / 2))
+                except:
+                    pass  # algunos widgets pueden no soportar esto
+
+        elif ajuste == "Relleno":
+            # Valor entre 0 y 200
+            h = min(valor * 1.8, 360)  # Escalar a [0, 360]
+            
+            # Convertir HSV → RGB
+            r, g, b = colorsys.hsv_to_rgb(h / 360, 1.0, 1.0)
+
+            # Si el valor es mayor a 180, mezclamos hacia blanco
+            if valor > 180:
+                t = (valor - 180) / 20  # de 0 a 1
+                r = r * (1 - t) + 1 * t
+                g = g * (1 - t) + 1 * t
+                b = b * (1 - t) + 1 * t
+
+            # RGB → HEX
+            hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+            # Aplica el color al frame
+            try:
+                frame.configure(fg_color=hex_color)
+            except Exception:
+                pass  # En caso de que no tenga fg_color
+            for hijo in frame.winfo_children():
+                try:
+                    hijo.configure(fg_color=hex_color)
+                except Exception:
+                    pass
+
+        elif ajuste == "Sombra":
+            # No hay sombra en CTkFrame por defecto. Puedes usar un color más oscuro para simular.
+            sombra_color = f"#{int(50 + valor):02x}{int(50 + valor):02x}{int(50 + valor):02x}"
+            frame.configure(border_color=sombra_color)
 
     def __form_task(self):
         
@@ -2464,7 +2743,7 @@ class App(ctk.CTk):
             )
 
     def buscar_imagen(self):
-        cbo_imagen = filedialog.askopenfilename(
+        return filedialog.askopenfilename(
             title="Selecciona Imagen (png,jpg,etc)",
             filetypes=[("Archivos de Imagen","*.png *.jpg *.jpeg *.gif")]
         )
