@@ -1332,7 +1332,7 @@ class App(ctk.CTk):
             btn_enviar.grid(row=4,column=1,pady=(10,10),padx=(0,50))
 
         elif tipo_bbdd in ["MySQL","PostgreSQL","SQLServer"] :  
-            
+            print(tipo_bbdd)
             lbl_user = ctk.CTkLabel(self.form,text="Usuario")
             lbl_user.grid(row=0,column=0,padx=(50,20),pady=(20,10),sticky="e")
             txt_user = ctk.CTkEntry(self.form)
@@ -1370,7 +1370,7 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
-                                       command=lambda: self.importar_guardar_bbdd(
+                                       command=lambda: self.importar_from_bbdd(
                                            nombre_tabla = txt_nombre_tabla.get(),
                                            usuario_db=txt_user.get(),
                                            password_db=txt_password.get(),
@@ -1582,8 +1582,8 @@ class App(ctk.CTk):
         for vector in df.values[:50]:
             self.tree.insert("","end",values=tuple(vector))
         # actualizaciones
-        self.cbo_var_y.configure(values=list(self.df.columns))
-        self.cbo_var_x.configure(values=list(self.df.columns))
+        self.cbo_var_y.configure(values=list(self.df.columns)+[""])
+        self.cbo_var_x.configure(values=list(self.df.columns)+[""])
 
     def crear_entrenamiento(self):
         header_padre = ctk.CTkFrame(self.tab2,fg_color=self.color.COLOR_FONDO_FRAME,corner_radius=10, border_width=2, border_color=self.color.COLOR_BORDE_WIDGET)
@@ -1694,7 +1694,7 @@ class App(ctk.CTk):
         
         self.frame_modelos = ctk.CTkFrame(self.tab2,
                                     height=400,
-                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                    fg_color=self.color.COLOR_FONDO_FRAME)
         self.frame_modelos.pack(fill="x",side="top",pady=(10,20),padx=20)
         btn_historial = ctk.CTkButton(self.frame_modelos,
                                       text="Mostrar Estidisticos",
@@ -1805,8 +1805,8 @@ class App(ctk.CTk):
                                      button_color=self.color.COLOR_RELLENO_WIDGET,
                                      command=self.call_update_font)
         self.cbo_fuente.grid(row=1, column=1, padx=5, pady=(0, 10),sticky="nsew")
-
-        self.cbo_size = ctk.CTkComboBox(frame_fuente, values=[str(i) for i in range(10, 25)], width=100,
+        lista_size = [ "12", "14", "16", "18", "20", "24", "28", "32", "36", "40", "44", "48", "60"]
+        self.cbo_size = ctk.CTkComboBox(frame_fuente, values=lista_size, width=100,
                                    button_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.call_update_font)
         self.cbo_size.grid(row=1, column=2, padx=5, pady=(0, 10), sticky="nsew")
@@ -1848,8 +1848,10 @@ class App(ctk.CTk):
         # Frame de impresión
         frame_guardar = tk.LabelFrame(header_hijo, text="Opciones Hoja", relief="flat", background=self.color.COLOR_FONDO_FRAME)
         frame_guardar.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
-
-        cbo_fondo = ctk.CTkComboBox(frame_guardar, values=["Opción 1", "Opción 2", "Opción 3"],
+        
+        
+        colores_lista = ["Blanco", "Gris claro", "Azul muy claro", "SunGlow", "Burnt Siena", "Cardinal", "Chocolate Cosmos", "Lapiz Lazuli", "Beige"]
+        cbo_fondo = ctk.CTkComboBox(frame_guardar, values=colores_lista,
                                     button_color=self.color.COLOR_RELLENO_WIDGET,
                                     command=self.cambiar_fondo_hoja)
         cbo_fondo.set("Elegir Fondo")
@@ -1948,17 +1950,24 @@ class App(ctk.CTk):
         self.cbo_var_x.pack(pady=(0,10))
 
         # Agregar componentes de ajustes del gráfico
-        ajustes_graficos = {}
+        self.ajustes_graficos = {}
         ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Sombra"]
+        # Dentro de tu clase, crea un diccionario para guardar ajustes por objeto
+        self.valores_ajustes = {
+            "texto": {},
+            "grafico": {},
+            "imagen": {}
+        }
+
         for i in range(len(ajustes_nombre)):
             nombre = ajustes_nombre[i]
 
-            ajustes_graficos[f"lbl_{nombre}"] = ctk.CTkLabel(panel_formato, text=nombre)
-            ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0)
+            self.ajustes_graficos[f"lbl_{nombre}"] = ctk.CTkLabel(panel_formato, text=nombre)
+            self.ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0)
 
-            ajustes_graficos[f"sld_{nombre}"] = ctk.CTkSlider(panel_formato, from_=0, to=200,
+            self.ajustes_graficos[f"sld_{nombre}"] = ctk.CTkSlider(panel_formato, from_=-100, to=100,
                                                             command=lambda valor, ajuste=nombre: self.aplicar_formato(valor, ajuste))
-            ajustes_graficos[f"sld_{nombre}"].grid(row=i, column=1)
+            self.ajustes_graficos[f"sld_{nombre}"].grid(row=i, column=1)
 
         self.frames_movil_text_box = {}
         self.frames_movil_graficos = {}
@@ -2012,14 +2021,16 @@ class App(ctk.CTk):
             self.cbo_editar_grafico.set("")
             self.cbo_editar_imagen.set("")
             self.clean_menu_editar(value)
-
+            self.actualizar_sliders(tipo,value)
         elif tipo == "grafico":
             self.cbo_editar_texto.set("")
             self.cbo_editar_imagen.set("")
+            self.actualizar_sliders(tipo,value)
 
         elif tipo == "imagen":
             self.cbo_editar_texto.set("")
             self.cbo_editar_grafico.set("")
+            self.actualizar_sliders(tipo,value)
 
     def clean_menu_editar(self,value):
         """     reinicia a valores perdeterminados el cbo fuente , cbo size , negrita, cursiva, subrrayado"""
@@ -2085,19 +2096,24 @@ class App(ctk.CTk):
         # Obtener variables seleccionadas (asegúrate que estos atributos existen en tu clase)
         var_x = self.cbo_var_x.get() if hasattr(self, "cbo_var_x") else None
         var_y = self.cbo_var_y.get() if hasattr(self, "cbo_var_y") else None
+        
+        
 
         # Control básico si no se seleccionan variables
-        if not var_y and tipo_grafico == "Bigote":
+        
+        if (var_y =='' or var_x =='') and tipo_grafico in ['Barra','Linea','Dispersión','Bigote por categoría']:
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita de los 2 ejes.")
+            return
+        elif  var_y =='' and tipo_grafico == "Tarta":
             messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje Y.")
             return
-        elif not var_x and tipo_grafico == "Tarta":
-            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje X.")
-            return
-        elif (not var_x or not var_y) and tipo_grafico not in ["Tarta", "Bigote"]:
-            messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Ejes X e Y.")
+        elif  var_x in self.df.columns.to_list() and (tipo_grafico == "Tarta" or tipo_grafico == 'Bigote'):
+            messagebox.showerror("Error", f"Grafica {tipo_grafico} No usa El Eje X.")
             return
         else:
             fig, ax = plt.subplots()
+            ax.set_facecolor('none')
+            fig.patch.set_facecolor('none')
             try:
                 if tipo_grafico == "Barra":
                     # Ejemplo: barras de la variable Y agrupadas por X
@@ -2106,7 +2122,7 @@ class App(ctk.CTk):
                     ax.set_title("Gráfico de Barras")
                 elif tipo_grafico == "Tarta":
                     # Pie con distribución de variable X
-                    counts = self.df[var_x].value_counts()
+                    counts = self.df[var_y].value_counts()
                     ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
                     ax.set_title("Gráfico de Tarta")
                 elif tipo_grafico == "Linea":
@@ -2129,9 +2145,11 @@ class App(ctk.CTk):
         hoja = self.dashboard.get().lower().replace(" ", "")
         hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
         
+
+        nombre  =f"Gráfico {self.num_grafico}"
         frame_movil = MovableResizableFrame(hojas_frame_,300,300)
-        self.frames_movil_graficos[f"Gráfico {self.num_grafico}"]=frame_movil
-        values = [f"Gráfico {self.num_grafico}"] + list(self.cbo_editar_grafico.cget("values"))
+        self.frames_movil_graficos[nombre]=frame_movil
+        values = [nombre] + list(self.cbo_editar_grafico.cget("values"))
         self.cbo_editar_grafico.configure(values=values)
         self.num_grafico+=1
         frame_movil.place(x=100, y=100)
@@ -2228,9 +2246,15 @@ class App(ctk.CTk):
     def cambiar_fondo_hoja(self, opcion):
         # Asocia opciones a colores
         colores = {
-            "Opción 1": "#ffffff",  # Blanco
-            "Opción 2": "#f0f0f0",  # Gris claro
-            "Opción 3": "#e6f7ff"   # Azul muy claro
+            "Blanco": "#ffffff",  # Blanco
+            "Gris claro": "#f0f0f0",  # Gris claro
+            "Azul muy claro": "#e6f7ff",   # Azul muy claro
+            "SunGlow":"#FFC857",
+            "Burnt Siena":"#E9724C",
+            "Cardinal":"#C5283D",
+            "Chocolate Cosmos":"#481D24",
+            "Lapiz Lazuli":"#255F85",
+            "Beige":"#F3FAE1",
         }
 
         color_fondo = colores.get(opcion)
@@ -2293,7 +2317,27 @@ class App(ctk.CTk):
             writer.writerow(["Tipo", "Nombre", "Contenido"])
             writer.writerows(datos)
 
-        messagebox.showerror("Error", f"Hoja guardada en {ruta_archivo}")
+        messagebox.showinfo("Guardado", f"Hoja guardada en {ruta_archivo}")
+
+    def actualizar_sliders(self, tipo, seleccionado):
+        print(self.valores_ajustes)
+        
+        # Obtener ajustes guardados (o dict vacío si no hay)
+        ajustes = self.valores_ajustes[tipo].get(seleccionado, {})
+        
+        # Lista de todos los ajustes que manejas
+        lista_ajustes = ["Size", "Width", "Height", "Border", "Redondear", "Relleno", "Sombra"]
+
+        for ajuste in lista_ajustes:
+            valor = ajustes.get(ajuste, 0)
+            slider = self.ajustes_graficos.get(f"sld_{ajuste}")
+            if slider:
+                original_command = slider._command
+                slider.configure(command=None)
+                slider.set(valor)
+                slider.configure(command=original_command)
+
+
 
     def aplicar_formato(self, valor, ajuste):
         valor = int(valor)
@@ -2308,21 +2352,57 @@ class App(ctk.CTk):
             tipo = "imagen"
         if not seleccionado:
             return
+        
+         # Guardar el valor del slider para este objeto y ajuste
+        if seleccionado not in self.valores_ajustes[tipo]:
+            self.valores_ajustes[tipo][seleccionado] = {}
+        self.valores_ajustes[tipo][seleccionado][ajuste] = valor
 
         if tipo == "texto":
             frame = self.frames_movil_text_box.get(seleccionado)
+            base_height = 200
+            base_width = 400
         elif tipo == "grafico":
             frame = self.frames_movil_graficos.get(seleccionado)
+            base = 300
         elif tipo == "imagen":
             frame = self.frames_movil_imagen.get(seleccionado)
         else:
             return
 
+        if not frame:
+            print("No has seleccionado Gráfico")
+            return
         # Aplica cambios según el ajuste
+        
         if ajuste == "Size":
-            new_size = 100 + valor  # base + valor
-            frame.configure(width=new_size, height=new_size)
-            frame.place_configure(width=new_size, height=new_size)
+            
+            
+            if tipo == "grafico" or tipo == "imagen":
+                new_size = base + valor # base + valor
+                frame.configure(width=new_size, height=new_size)
+                frame.place_configure(width=new_size, height=new_size)
+            if tipo == "texto":
+                new_heigth = base_height + valor
+                new_width = base_width + valor 
+                frame.configure(width=new_width, height=new_heigth)
+                frame.place_configure(width=new_width, height=new_heigth)
+            
+            
+            slider = self.ajustes_graficos["sld_Width"]
+            # Guardar y quitar el command
+            original_command = slider._command
+            slider.configure(command=None)
+            # Actualizar sin disparar la función
+            slider.set(valor)
+            # Volver a poner el command
+            slider.configure(command=original_command)
+
+            slider = self.ajustes_graficos["sld_Height"]
+            original_command = slider._command
+            slider.configure(command=None)
+            slider.set(valor)
+            slider.configure(command=original_command)
 
             if tipo == "imagen":
                 # Redimensionar la imagen original para que encaje en el nuevo tamaño
@@ -2334,19 +2414,28 @@ class App(ctk.CTk):
                 frame.label_imagen.image = img
 
         elif ajuste == "Width":
-            current = frame.winfo_height()
-            frame.configure(width=100 + valor)
-            frame.place_configure(width=100 + valor, height=current)
+
+            current_height = frame.winfo_height()
+           
+            width_new = (base_width if tipo=="texto" else base) + valor
+            
+            frame.configure(width=width_new)
+            frame.place_configure(width=width_new, height=current_height)
+
 
         elif ajuste == "Height":
-            current = frame.winfo_width()
-            frame.configure(height=100 + valor)
-            frame.place_configure(width=current, height=100 + valor)
+            current_width = frame.winfo_width()
+
+            heigth_new = (base_height if tipo=="texto" else base) + valor
+            frame.configure(height=heigth_new)
+            frame.place_configure(width=current_width, height=heigth_new)
 
         elif ajuste == "Border":
+            valor = abs(valor)
             frame.configure(border_width=int(valor / 10))  # escala
 
         elif ajuste == "Redondear":
+            valor =abs(valor)
             # Asume que el frame tiene atributo corner_radius si es CTkFrame personalizado
             if hasattr(frame, 'configure'):
                 try:
@@ -2355,6 +2444,7 @@ class App(ctk.CTk):
                     pass  # algunos widgets pueden no soportar esto
 
         elif ajuste == "Relleno":
+            valor =abs(valor)
             # Valor entre 0 y 200
             h = min(valor * 1.8, 360)  # Escalar a [0, 360]
             
@@ -2462,10 +2552,11 @@ class App(ctk.CTk):
             )
             print("Variable Dependiente","No has seleccionado ninguna variable dependiente")
             return
+        
         select_model = self.cbo_modelo.get()
         if select_model not in list(mapear_modelos.keys()):
-            messagebox.showwarning("Modelo no válido",f"El modelo seleccionado no es válido {select_model}")
-            print("Modelo no válido",f"El modelo seleccionado no es válido {select_model}")
+            messagebox.showwarning("Modelo no válido",f"El modelo seleccionado no es válido.Valor = {select_model}")
+            print("Modelo no válido",f"El modelo seleccionado no es válido.Valor = {select_model}")
             return
         
         name_model = mapear_modelos.get(select_model)
@@ -2505,28 +2596,35 @@ class App(ctk.CTk):
                 print("Entrenando modelo sin hiperparametros")
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
-                rendimiento = mean_squared_error(y_true=y_test,y_pred=y_pred)
-
+                y_pred_train = model.predict(X_train)
 
                 if nombre_metrica == "MSE":
                     rendimiento = mean_squared_error(y_test, y_pred)
+                    rendimiento_train = mean_squared_error(y_train, y_pred_train)
                 elif nombre_metrica == "RMSE":
                     rendimiento = root_mean_squared_error(y_test, y_pred)
+                    rendimiento_train = root_mean_squared_error(y_train, y_pred_train)
                 elif nombre_metrica == "MEA":
                     rendimiento = mean_absolute_error(y_test, y_pred)
+                    rendimiento_train = mean_absolute_error(y_train, y_pred_train)
                 elif nombre_metrica == "R²":
                     rendimiento = r2_score(y_test, y_pred)
+                    rendimiento_train = r2_score(y_train, y_pred_train)
                 elif nombre_metrica == "Accuracy":
-                    rendimiento = accuracy_score(y_test, y_pred) 
+                    rendimiento = accuracy_score(y_test, y_pred)
+                    rendimiento_train = accuracy_score(y_train, y_pred_train)
                 elif nombre_metrica == "f1":
                     rendimiento = f1_score(y_test, y_pred, average="weighted")
+                    rendimiento_train = f1_score(y_train, y_pred_train,average='weighted')
                 elif nombre_metrica == "ROC AUC":
                     try:
                         rendimiento = roc_auc_score(y_test, model.predict_proba(X_test), multi_class="ovr")
+                        rendimiento_train = roc_auc_score(y_train, model.predict_proba(X_train), multi_class="ovr")
                     except:
                         rendimiento = "No disponible (predict_proba no soportado)"
                 elif nombre_metrica == "Precisión":
                     rendimiento = precision_score(y_test, y_pred, average="weighted")
+                    rendimiento_train = precision_score(y_train, y_pred_train, average="weighted")
                 else:
                     rendimiento = "Métrica desconocida"
 
@@ -2537,10 +2635,11 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
+                           \n{nombre_metrica.capitalize()+" (en train"}: {round(rendimiento_train, 4) if isinstance(rendimiento_train, (float, int)) else rendimiento_train}
+                           \n{nombre_metrica.capitalize()+" (en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
                 self.agregar_frame_modelo(nombre, info)
                 self.contador_modelos += 1
-
+                print("rendimiento_train",rendimiento_train)
                 print("Rendimiento:",rendimiento)
 
             except Exception as ex:
@@ -2613,11 +2712,11 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \n{nombre_metrica.capitalize() +"(en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
-                           \nMejor score: {search.best_score_}"""
+                           \nScore del Mejor Estimador (en validación): {-round(search.best_score_,4)}"""
                 self.agregar_frame_modelo(nombre, info)
                 self.contador_modelos += 1
 
@@ -2642,11 +2741,11 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize()}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \n{nombre_metrica.capitalize()} +"(en test)": {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
-                           \nMejor score: {search.best_score_}"""
+                           \nScore del Mejor Estimador (en validación): {-search.best_score_}"""
                 self.agregar_frame_modelo(nombre, info)
                 self.contador_modelos += 1
 
@@ -2658,12 +2757,13 @@ class App(ctk.CTk):
         fila = self.modelo_count // 5
         columna = self.modelo_count % 5
 
-        frame = ctk.CTkFrame(self.frame_modelos)
-        frame.grid(row=fila, column=columna, padx=10, pady=10, sticky="nsew")
+        # frame = ctk.CTkFrame(self.frame_modelos)
+        # frame.grid(row=fila, column=columna, padx=10, pady=10)
 
-        btn_info = ctk.CTkButton(frame, text=nombre_modelo,
-                                command=lambda: self.mostrar_info_modelo(nombre_modelo, info_texto))
-        btn_info.pack(fill="both", expand=True, padx=5, pady=5)
+        btn_info = ctk.CTkButton(self.frame_modelos, text=nombre_modelo,
+                                command=lambda: self.mostrar_info_modelo(nombre_modelo, info_texto),
+                                fg_color=self.color.COLOR_RELLENO_WIDGET)
+        btn_info.grid(row=fila,column=columna,padx=10,pady=10,sticky="snew")
 
         # Asegurar que la columna se expanda proporcionalmente
         self.frame_modelos.grid_columnconfigure(columna, weight=1)
