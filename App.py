@@ -2735,47 +2735,6 @@ class App(ctk.CTk):
 
         popup.destroy()
 
-    def mostrar_popup_reinicio(self, app_ref, nuevo_modo):
-        popup = ctk.CTkToplevel(self)
-        popup.title("Cambio de tema")
-        popup.geometry("400x180")
-        popup.resizable(False, False)
-        popup.transient(self)
-        popup.grab_set()
-        popup.focus_force()
-
-        popup.configure(fg_color=self.color.COLOR_FONDO_FRAME)
-
-        ctk.CTkLabel(
-            popup,
-            text="Para aplicar el nuevo tema es necesario reiniciar la aplicación.",
-            text_color=self.color.COLOR_LETRA_NORMAL,
-            wraplength=360,
-            justify="center"
-        ).pack(padx=20, pady=(20, 10))
-
-        def reiniciar():
-            saving_config(nuevo_modo, "COLOR_MODE")
-            popup.destroy()
-            app_ref.reiniciar_app()
-
-        def guardar_para_despues():
-            saving_config(nuevo_modo, "COLOR_MODE")
-            popup.destroy()
-
-        boton_frame = ctk.CTkFrame(popup, fg_color="transparent")
-        boton_frame.pack(pady=20)
-
-        ctk.CTkButton(boton_frame, text="Reiniciar ahora", command=reiniciar,
-                    fg_color=self.color.COLOR_RELLENO_WIDGET).pack(side="left", padx=10)
-        ctk.CTkButton(boton_frame, text="Aplicar después", command=guardar_para_despues,
-                    fg_color=self.color.COLOR_RELLENO_WIDGET).pack(side="right", padx=10)
-
-    def reiniciar_app(self):
-        import os, sys
-        self.destroy()
-        os.execl(sys.executable, sys.executable, *sys.argv)
-
     def __form_task(self):
         popup_task = ctk.CTkToplevel(self, fg_color=self.color.COLOR_FONDO_FRAME)
         popup_task.title("Notas")
@@ -3288,7 +3247,12 @@ class App(ctk.CTk):
                         for sub_frame2 in sub_frame.winfo_children():
                             if isinstance(sub_frame2, (ctk.CTkFrame, ttk.LabelFrame)):
                                 sub_frame2.configure(fg_color=self.color.COLOR_FONDO_FRAME,
-                                                    )
+                                                        )
+                            
+                            for sub_frame3 in sub_frame2.winfo_children():
+                                if isinstance(sub_frame3, (ctk.CTkFrame, ttk.LabelFrame)):
+                                    sub_frame3.configure(fg_color=self.color.COLOR_FONDO_FRAME,
+                                                        )
 
 
         def aplicar_color(widget):
@@ -3312,11 +3276,77 @@ class App(ctk.CTk):
                 pass  # Algunos widgets no tienen hijos
 
         aplicar_color(self)  # Empezamos desde el widget raíz
-
-
-
-
-
-
     
+        self.actualizar_colores_dashboard()
 
+    def actualizar_colores_dashboard(self):
+        if not hasattr(self, "dashboard"):
+            return
+
+        # Cambiar color de fondo del dashboard
+        self.dashboard.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+
+        # Actualizar elementos dentro del panel lateral (formato y gráficos)
+        for tabview in self.dashboard.master.winfo_children():
+            if isinstance(tabview, ctk.CTkTabview):
+                tabview.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+                for tab in tabview.winfo_children():
+                    for panel in tab.winfo_children():
+                        if isinstance(panel, ctk.CTkFrame):
+                            panel.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+                            for widget in panel.winfo_children():
+                                if isinstance(widget, ctk.CTkFrame):
+                                    widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                elif isinstance(widget, ctk.CTkLabel):
+                                    widget.configure(text_color=self.color.COLOR_LETRA_BOTON)
+                                elif isinstance(widget, ctk.CTkComboBox):
+                                    widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
+                                elif isinstance(widget, ctk.CTkButton):
+                                    widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                elif isinstance(widget, tk.LabelFrame):
+                                    widget.configure(background=self.color.COLOR_FONDO_FRAME)
+
+        # Ajustes gráficos
+        for widget in self.ajustes_graficos.values():
+            if isinstance(widget, ctk.CTkComboBox):
+                widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
+            elif isinstance(widget, ctk.CTkLabel):
+                widget.configure(text_color=self.color.COLOR_LETRA_NORMAL)
+            elif isinstance(widget, ctk.CTkSlider):
+                widget.configure(progress_color=self.color.COLOR_RELLENO_WIDGET)
+
+        # Otros combos y botones
+        widgets_adicionales = [
+            self.cbo_editar_imagen, self.cbo_editar_texto, self.cbo_editar_grafico,
+            self.cbo_fuente, self.cbo_size, self.cbo_var_x, self.cbo_var_y,
+            self.cmb_relleno, self.cmb_color,
+            self.btn_negrita, self.btn_cursiva, self.btn_subrayado
+        ]
+
+        for widget in widgets_adicionales:
+            if isinstance(widget, ctk.CTkComboBox):
+                widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
+            elif isinstance(widget, ctk.CTkButton):
+                widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
+
+        # Actualizar hojas y sus frames
+        for hoja_key, hoja in self.hojas.items():
+            hoja.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+            if hoja_key + "_frame" in self.hojas_frame:
+                self.hojas_frame[hoja_key + "_frame"].configure(
+                    fg_color="#ffffff",  # Fondo blanco específico para hoja_frame
+                    border_color=self.color.COLOR_BORDE_WIDGET
+                )
+        self.actualizar_fondos_labelframe()
+
+    def actualizar_fondos_labelframe(self, widget=None):
+        if widget is None:
+            widget = self
+
+        for child in widget.winfo_children():
+            if isinstance(child, tk.LabelFrame):
+                child.configure(background=self.color.COLOR_FONDO_FRAME)
+                for sub_frame in child.winfo_children():
+                    if isinstance(sub_frame, ctk.CTkFrame):
+                        sub_frame.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+            self.actualizar_fondos_labelframe(child)
