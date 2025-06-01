@@ -66,12 +66,38 @@ def center_window(ventana):
     y = 150
     ventana.geometry(f"+{x}+{y}")
 
+
+
+
+
+def saving_config(modo,key="COLOR_MODE"):
+    CONFIG_FILE = r"config.json"
+    # Leer contenido actual
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            data = json.load(f)
+    else:
+        data = {}
+
+    data[key] = modo
+
+    # Guardar el archivo actualizado
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def load_setting(key="COLOR_MODE"):
+    CONFIG_FILE = r"config.json"
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f).get(key, "DRACULA")
+    return None
+
 class App(ctk.CTk):
 
     def __init__(self, fg_color = None, **kwargs):
         super().__init__(fg_color, **kwargs)
         
-        self.mode="DRACULA"
+        self.mode=load_setting(key="COLOR_MODE")
         self.color = colores.ColorDataFrame().get_colores(self.mode)
         self.configure(fg_color=self.color.COLOR_FONDO_APP)
         self.model_info_list = []
@@ -2576,12 +2602,12 @@ class App(ctk.CTk):
                      text_color=self.color.COLOR_LETRA_NORMAL
                      ).grid(row=1,column=0,padx=10,pady=10)
         
-        cbo_setting=ctk.CTkComboBox(popup_setting,
+        cbo_set_table=ctk.CTkComboBox(popup_setting,
                         values=self.table_name_list,
                         state="readonly",
                         button_color=self.color.COLOR_RELLENO_WIDGET
                         )
-        cbo_setting.grid(row=1,column=1,padx=10,pady=10)
+        cbo_set_table.grid(row=1,column=1,padx=10,pady=10)
         
         ctk.CTkLabel(popup_setting,
                      text="Color Fondo",
@@ -2607,16 +2633,35 @@ class App(ctk.CTk):
                       text="Aplicar",
                       command=lambda:self.actualizar_interfaz(
                           cbo_color_fondo.get(),
-                          cbo_setting.get()
+                          cbo_set_table.get(),
+                          popup_setting
                       ),
                       ).grid(row=3,column=1,padx=10,pady=10)
         
 
-    def actualizar_interfaz(self):    
-        pass
-
+    def actualizar_interfaz(self,color_mode,tabla_actual,popup):    
+        if self.mode != color_mode and color_mode!='':
+            saving_config(color_mode,"COLOR_MODE")
+            self.mode = color_mode
 
         
+        if tabla_actual != self.table_name  and tabla_actual !='':
+            self.table_name = tabla_actual
+            saving_config(tabla_actual,"TABLA_NAME")
+            self.importar_from_bbdd
+            engine = config.VAR_CONEXION + self.db_name
+            try:
+                self.df = pd.read_sql(f"SELECT * FROM {self.table_name}", engine)
+                self.show_tree_viewport()
+                
+            except sqlalchemy.exc.OperationalError as e:
+                messagebox.showerror("Error",f"Error al conectar con la base de datos o al consultar la tabla:{e}")
+                print("Error al conectar con la base de datos o al consultar la tabla:")
+                print(str(e))
+
+        popup.destroy()
+
+
     def __form_task(self):
         popup_task = ctk.CTkToplevel(self, fg_color=self.color.COLOR_FONDO_FRAME)
         popup_task.title("Notas")
