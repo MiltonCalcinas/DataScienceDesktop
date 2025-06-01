@@ -1745,10 +1745,10 @@ class App(ctk.CTk):
         header_padre.grid_columnconfigure(0, weight=1)  # Expande la columna 0 de header_padre
 
         #header_hijo.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_hijo
-        header_hijo.grid_columnconfigure(0, weight=1,minsize=200)  # Expande la columna 0 de header_hijo
-        header_hijo.grid_columnconfigure(1, weight=1,minsize=250)  # Expande la columna 1 de header_hijo
-        header_hijo.grid_columnconfigure(2,weight=1,minsize=300)
-        header_hijo.grid_columnconfigure(3,weight=1,minsize=120)
+        header_hijo.grid_columnconfigure(0, weight=3,minsize=250)  # Expande la columna 0 de header_hijo
+        header_hijo.grid_columnconfigure(1, weight=3,minsize=300)  # Expande la columna 1 de header_hijo
+        header_hijo.grid_columnconfigure(2,weight=2,minsize=150)
+        header_hijo.grid_columnconfigure(3,weight=2,minsize=150)
 
         # Frame de imagen
         frame_img = tk.LabelFrame(header_hijo, text="Opciones Imagen", relief="flat", background=self.color.COLOR_FONDO_FRAME)
@@ -1857,22 +1857,13 @@ class App(ctk.CTk):
                                           command=lambda v: self.seleccionar_elemento("grafico", v)
                                           )
         self.cbo_editar_grafico.set("Elegir Grafico")
-        self.cbo_editar_grafico.grid(row=0, column=0, columnspan=2, padx=5, pady=(5,10), sticky="nsew")
+        self.cbo_editar_grafico.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
 
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.eliminar_grafico)
-        btn_borrar_grafico.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
-
-        cbo_relleno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_relleno.grid(row=1, column=0, padx=5, sticky="nsew")
-
-        cbo_contorno = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_contorno.grid(row=1, column=1, padx=5, sticky="nsew")
-
-        cbo_efectos = ctk.CTkComboBox(frame_configurar_grafico,button_color=self.color.COLOR_RELLENO_WIDGET)
-        cbo_efectos.grid(row=1, column=2, padx=5, sticky="nsew")
+        btn_borrar_grafico.grid(row=1, column=0, padx=5, pady=(5,10), sticky="nsew")
 
         # Frame de impresión
         frame_guardar = tk.LabelFrame(header_hijo, text="Opciones Hoja", relief="flat", background=self.color.COLOR_FONDO_FRAME)
