@@ -260,12 +260,12 @@ class App(ctk.CTk):
         self.crear_dashboard()
 
     def crear_sidebar(self):
-        menu = ctk.CTkFrame(self)
-        menu.pack(side="top",fill="x",expand=False,padx=10)
-        menu.configure(fg_color=self.color.COLOR_FONDO_APP)
+        self.menu = ctk.CTkFrame(self)
+        self.menu.pack(side="top",fill="x",expand=False,padx=10)
+        self.menu.configure(fg_color=self.color.COLOR_FONDO_APP)
     
         img_task = ctk.CTkImage(light_image=Image.open(r"iconos\ico_task.png"),size=(20,20))
-        btn_task= ctk.CTkButton(menu,
+        btn_task= ctk.CTkButton(self.menu,
                                 image=img_task,
                                 text="",
                                 width=20,
@@ -274,7 +274,7 @@ class App(ctk.CTk):
         btn_task.grid(row=0,column=0,padx=(0,10))
 
         img_setting = ctk.CTkImage(light_image=Image.open(r"iconos\ico_setting.png"),size=(20,20))
-        btn_setting= ctk.CTkButton(menu,
+        btn_setting= ctk.CTkButton(self.menu,
                                 image=img_setting,
                                 text="",
                                 width=20,
@@ -2714,8 +2714,10 @@ class App(ctk.CTk):
 
     def actualizar_interfaz(self,color_mode,tabla_actual,popup):    
         if self.mode != color_mode and color_mode!='':
-            self.mostrar_popup_reinicio(self, color_mode)
-            return
+            saving_config(color_mode,"COLOR_MODE")
+            self.mode = color_mode
+            self.color = colores.ColorDataFrame().get_colores(self.mode)
+            self.actualizar_colores_widgets()
         
         if tabla_actual != self.table_name  and tabla_actual !='':
             self.table_name = tabla_actual
@@ -3267,6 +3269,52 @@ class App(ctk.CTk):
                         foreground= self.color.COLOR_BORDE_WIDGET,
                         padding=(10, 10),
                         font=("Arial", 10, "bold"))
+        
+    def actualizar_colores_widgets(self):
+        self.__style_for_tabla()
+        self.configure(fg_color=self.color.COLOR_FONDO_APP)
+        self.menu.configure(fg_color = self.color.COLOR_FONDO_APP)
+        self.notebook.configure(fg_color=self.color.COLOR_FONDO_APP,
+                                border_color=self.color.COLOR_BORDE_WIDGET)
+        for frame in self.notebook.winfo_children():
+            if isinstance(frame, ctk.CTkFrame):
+                frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+                for sub_frame in frame.winfo_children():
+                    if isinstance(sub_frame, ctk.CTkFrame):
+                        sub_frame.configure(fg_color=self.color.COLOR_FONDO_FRAME,
+                                            border_color=self.color.COLOR_BORDE_WIDGET,
+                                            border_width=1)
+                        
+                        for sub_frame2 in sub_frame.winfo_children():
+                            if isinstance(sub_frame2, (ctk.CTkFrame, ttk.LabelFrame)):
+                                sub_frame2.configure(fg_color=self.color.COLOR_FONDO_FRAME,
+                                                    )
+
+
+        def aplicar_color(widget):
+            if isinstance(widget, ctk.CTkButton):
+                widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                 border_color=self.color.COLOR_BORDE_WIDGET,
+                                 border_width=1
+                                 )
+
+            elif isinstance(widget, ctk.CTkComboBox):
+                widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET,
+                                 border_color=self.color.COLOR_BORDE_WIDGET,
+                                 border_width=1
+                                 )
+
+            # Recorremos recursivamente los hijos
+            try:
+                for child in widget.winfo_children():
+                    aplicar_color(child)
+            except AttributeError:
+                pass  # Algunos widgets no tienen hijos
+
+        aplicar_color(self)  # Empezamos desde el widget raíz
+
+
+
 
 
 
