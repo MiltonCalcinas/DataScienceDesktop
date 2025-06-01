@@ -1954,7 +1954,7 @@ class App(ctk.CTk):
 
         # Agregar componentes de ajustes del gráfico
         self.ajustes_graficos = {}
-        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Color"]
+        ajustes_nombre = ["Size","Width","Height","Redondear","Relleno","Color"]
         # Dentro de tu clase, crea un diccionario para guardar ajustes por objeto
         self.valores_ajustes = {
             "texto": {},
@@ -2434,11 +2434,6 @@ class App(ctk.CTk):
             heigth_new = (base_height if tipo=="texto" else base) + valor
             frame.configure(height=heigth_new)
             frame.place_configure(width=current_width, height=heigth_new)
-
-        elif ajuste == "Border":
-            valor = abs(valor)
-            padding = int(valor / 10)
-            frame.configure(padx=padding, pady=padding)
 
         elif ajuste == "Redondear":
             valor =abs(valor)
