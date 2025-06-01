@@ -591,11 +591,7 @@ class App(ctk.CTk):
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         variable_column.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
-        if self.mode == "LIGHT":
-            color_texto=self.color.COLOR_LETRA_NORMAL
-        else:
-            color_texto=self.color.COLOR_LETRA_BOTON
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=color_texto)
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
         chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
         
         # Guardar los widgets en una lista
@@ -1018,14 +1014,19 @@ class App(ctk.CTk):
         popup_choose_columns.focus_force()
         popup_choose_columns.grab_set()
         
+        # Crear frame scrollable
+        scroll_frame = ctk.CTkScrollableFrame(popup_choose_columns, fg_color=self.color.COLOR_FONDO_APP, width=300, height=300)
+        scroll_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
         group_check = {}
         for i,col in enumerate(self.df.columns):
             var = ctk.BooleanVar(value=True)
             chk = ctk.CTkCheckBox(
-                                popup_choose_columns,
+                                scroll_frame,
                                 text=col,
-                                variable=var
+                                variable=var,
+                                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                text_color=self.color.COLOR_LETRA_SOBRE_FONDO
                                 )
             chk.pack(anchor="w",pady=5,padx=20)
             group_check[col] = var
@@ -1033,8 +1034,9 @@ class App(ctk.CTk):
         print("Group checkbox de Transformar variables",group_check)
         btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                         text="Seleccionar",
+                                        fg_color=self.color.COLOR_RELLENO_WIDGET,
                                         command=lambda:self.__save_columns(group_check,popup_choose_columns))
-        btn_choose_columns.pack(anchor="w",pady=(5,10),padx=20)
+        btn_choose_columns.pack(anchor="center",pady=(5,10),padx=20)
 
     def __save_columns(self,group_check,popup_choose_columns):
         cols =  [ col for col,var in group_check.items() if var.get()]
@@ -2666,10 +2668,12 @@ class App(ctk.CTk):
 
         ctk.CTkButton(popup_setting,
                       text="Cancelar",
+                      fg_color = self.color.COLOR_RELLENO_WIDGET,
                       command=cerrar,
                       ).grid(row=3,column=0,padx=10,pady=10)
         ctk.CTkButton(popup_setting,
                       text="Aplicar",
+                      fg_color = self.color.COLOR_RELLENO_WIDGET,
                       command=lambda:self.actualizar_interfaz(
                           cbo_color_fondo.get(),
                           cbo_set_table.get(),
@@ -2680,9 +2684,8 @@ class App(ctk.CTk):
 
     def actualizar_interfaz(self,color_mode,tabla_actual,popup):    
         if self.mode != color_mode and color_mode!='':
-            saving_config(color_mode,"COLOR_MODE")
-            self.mode = color_mode
-
+            self.mostrar_popup_reinicio(self, color_mode)
+            return
         
         if tabla_actual != self.table_name  and tabla_actual !='':
             self.table_name = tabla_actual
@@ -2700,6 +2703,46 @@ class App(ctk.CTk):
 
         popup.destroy()
 
+    def mostrar_popup_reinicio(self, app_ref, nuevo_modo):
+        popup = ctk.CTkToplevel(self)
+        popup.title("Cambio de tema")
+        popup.geometry("400x180")
+        popup.resizable(False, False)
+        popup.transient(self)
+        popup.grab_set()
+        popup.focus_force()
+
+        popup.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+
+        ctk.CTkLabel(
+            popup,
+            text="Para aplicar el nuevo tema es necesario reiniciar la aplicación.",
+            text_color=self.color.COLOR_LETRA_NORMAL,
+            wraplength=360,
+            justify="center"
+        ).pack(padx=20, pady=(20, 10))
+
+        def reiniciar():
+            saving_config(nuevo_modo, "COLOR_MODE")
+            popup.destroy()
+            app_ref.reiniciar_app()
+
+        def guardar_para_despues():
+            saving_config(nuevo_modo, "COLOR_MODE")
+            popup.destroy()
+
+        boton_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        boton_frame.pack(pady=20)
+
+        ctk.CTkButton(boton_frame, text="Reiniciar ahora", command=reiniciar,
+                    fg_color=self.color.COLOR_RELLENO_WIDGET).pack(side="left", padx=10)
+        ctk.CTkButton(boton_frame, text="Aplicar después", command=guardar_para_despues,
+                    fg_color=self.color.COLOR_RELLENO_WIDGET).pack(side="right", padx=10)
+
+    def reiniciar_app(self):
+        import os, sys
+        self.destroy()
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
     def __form_task(self):
         popup_task = ctk.CTkToplevel(self, fg_color=self.color.COLOR_FONDO_FRAME)
@@ -2729,7 +2772,7 @@ class App(ctk.CTk):
         self.botones_por_fila_nota = 3
 
         def abrir_ventana_nota(id_nota):
-            nota_window = ctk.CTkToplevel(popup_task)
+            nota_window = ctk.CTkToplevel(popup_task, fg_color=self.color.COLOR_FONDO_FRAME)
             nota_window.title(f"Nota {id_nota}")
             nota_window.geometry("300x300")
             nota_window.resizable(False, False)
@@ -2749,7 +2792,7 @@ class App(ctk.CTk):
             if id_nota in self.notas_guardadas:
                 textbox.insert("0.0", self.notas_guardadas[id_nota])
 
-            btn_frame = ctk.CTkFrame(nota_window, fg_color="transparent")
+            btn_frame = ctk.CTkFrame(nota_window, fg_color=self.color.COLOR_FONDO_FRAME)
             btn_frame.pack(pady=10)
 
             def guardar():
@@ -2760,8 +2803,8 @@ class App(ctk.CTk):
             def cancelar():
                 nota_window.destroy()
 
-            btn_guardar = ctk.CTkButton(btn_frame, text="Guardar", command=guardar, width=100)
-            btn_cancelar = ctk.CTkButton(btn_frame, text="Cancelar", command=cancelar, width=100)
+            btn_guardar = ctk.CTkButton(btn_frame, text="Guardar", command=guardar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET)
+            btn_cancelar = ctk.CTkButton(btn_frame, text="Cancelar", command=cancelar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET)
             btn_guardar.grid(row=0, column=0, padx=5)
             btn_cancelar.grid(row=0, column=1, padx=5)
 

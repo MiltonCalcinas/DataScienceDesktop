@@ -1,4 +1,5 @@
 venv/
 session.json
+config.json
 __pycache__/
 .ipynb_checkpoints/

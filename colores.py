@@ -7,6 +7,7 @@ class ColorDataFrame():
                 "COLOR_FONDO_FRAME": "#2A9D8F",
                 "COLOR_RELLENO_WIDGET":"#156082", #BOTON, CBO ITEMS, NOMBRES COLUMNAS (TABLA)
                 "COLOR_BORDE_WIDGET":"#FFFFFF",
+                'COLOR_LETRA_SOBRE_FONDO':  '#FFFFFF',
                 "COLOR_LETRA_NORMAL" : "#272932",
                 "COLOR_LETRA_NEGRITA": "#000000",
                 'COLOR_LETRA_CBO':  '#156082',      # SOLO ENCABEZADO
@@ -22,6 +23,7 @@ class ColorDataFrame():
                 "COLOR_FONDO_FRAME": "#DCEAF7",
                 "COLOR_RELLENO_WIDGET":"#156082",
                 "COLOR_BORDE_WIDGET":"#0070C0",
+                'COLOR_LETRA_SOBRE_FONDO':  '#000000',
                 "COLOR_LETRA_NORMAL" : "#272932",
                 "COLOR_LETRA_NEGRITA": "#000000",
                 'COLOR_LETRA_CBO':  '#156082',
@@ -36,6 +38,7 @@ class ColorDataFrame():
                 "COLOR_FONDO_FRAME": "#1B998B",
                 "COLOR_RELLENO_WIDGET":"#ED217C",
                 "COLOR_BORDE_WIDGET":"#FFFD82",
+                'COLOR_LETRA_SOBRE_FONDO':  '#FFFFFF',
                 "COLOR_LETRA_NORMAL" : "#272932",
                 "COLOR_LETRA_NEGRITA": "#000000",
                 'COLOR_LETRA_CBO':  '#ED217C',
