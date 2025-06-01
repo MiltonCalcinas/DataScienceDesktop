@@ -1954,7 +1954,8 @@ class App(ctk.CTk):
 
         # Agregar componentes de ajustes del gráfico
         self.ajustes_graficos = {}
-        ajustes_nombre = ["Size","Width","Height","Redondear","Relleno","Color"]
+        ajustes_con_slider = ["Size","Width","Height","Redondear"]
+
         # Dentro de tu clase, crea un diccionario para guardar ajustes por objeto
         self.valores_ajustes = {
             "texto": {},
@@ -1962,8 +1963,8 @@ class App(ctk.CTk):
             "imagen": {}
         }
 
-        for i in range(len(ajustes_nombre)):
-            nombre = ajustes_nombre[i]
+        for i in range(len(ajustes_con_slider)):
+            nombre = ajustes_con_slider[i]
 
             self.ajustes_graficos[f"lbl_{nombre}"] = ctk.CTkLabel(panel_formato, text=nombre)
             self.ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0)
@@ -1971,6 +1972,34 @@ class App(ctk.CTk):
             self.ajustes_graficos[f"sld_{nombre}"] = ctk.CTkSlider(panel_formato, from_=-100, to=100,
                                                             command=lambda valor, ajuste=nombre: self.aplicar_formato(valor, ajuste))
             self.ajustes_graficos[f"sld_{nombre}"].grid(row=i, column=1)
+
+        # Relleno
+        self.lbl_relleno = ctk.CTkLabel(panel_formato, text="Relleno")
+        self.lbl_relleno.grid(row=len(ajustes_con_slider)+1, column=0)
+
+        self.cmb_relleno = ctk.CTkComboBox(panel_formato,
+            values=["Ninguno", "Negro", "Blanco", "Rojo", "Verde", "Azul", "Amarillo", 
+                    "Cian", "Magenta", "Gris Claro", "Gris", "Gris Oscuro", "Naranja", 
+                    "Rosado", "Lima", "Turquesa", "Violeta", "Lavanda", "Dorado", 
+                    "Plateado", "Celeste", "Aguamarina", "Coral"],
+            command=lambda valor: self.aplicar_formato(valor, "Relleno")
+        )
+        self.cmb_relleno.grid(row=len(ajustes_con_slider)+1, column=1)
+        self.ajustes_graficos["cmb_relleno"] = self.cmb_relleno
+
+        # Color
+        self.lbl_color = ctk.CTkLabel(panel_formato, text="Color")
+        self.lbl_color.grid(row=len(ajustes_con_slider)+2, column=0)
+
+        self.cmb_color = ctk.CTkComboBox(panel_formato,
+            values=["Negro", "Blanco", "Rojo", "Verde", "Azul", "Amarillo", "Cian", 
+                    "Magenta", "Gris Claro", "Gris", "Gris Oscuro", "Naranja", 
+                    "Rosado", "Lima", "Turquesa", "Violeta", "Lavanda", "Dorado", 
+                    "Plateado", "Celeste", "Aguamarina", "Coral"],
+            command=lambda valor: self.aplicar_formato(valor, "Color")
+        )
+        self.cmb_color.grid(row=len(ajustes_con_slider)+2, column=1)
+        self.ajustes_graficos["cmb_color"] = self.cmb_color
 
         self.frames_movil_text_box = {}
         self.frames_movil_graficos = {}
@@ -2324,15 +2353,17 @@ class App(ctk.CTk):
         messagebox.showinfo("Guardado", f"Hoja guardada en {ruta_archivo}")
 
     def actualizar_sliders(self, tipo, seleccionado):
-        print(self.valores_ajustes)
+        # print(self.valores_ajustes)
         
         # Obtener ajustes guardados (o dict vacío si no hay)
         ajustes = self.valores_ajustes[tipo].get(seleccionado, {})
         
-        # Lista de todos los ajustes que manejas
-        lista_ajustes = ["Size", "Width", "Height", "Redondear", "Relleno", "Color"]
+        # Lista de todos los ajustes
+        lista_ajustes_slider = ["Size", "Width", "Height", "Redondear"]
+        lista_ajustes_combobox = ["Relleno", "Color"]
 
-        for ajuste in lista_ajustes:
+        # Actualizar sliders
+        for ajuste in lista_ajustes_slider:
             valor = ajustes.get(ajuste, 0)
             slider = self.ajustes_graficos.get(f"sld_{ajuste}")
             if slider:
@@ -2341,10 +2372,30 @@ class App(ctk.CTk):
                 slider.set(valor)
                 slider.configure(command=original_command)
 
-
+        # Actualizar comboboxes
+        for ajuste in lista_ajustes_combobox:
+            valor = ajustes.get(ajuste, None)
+            combo = self.ajustes_graficos.get(f"cmb_{ajuste.lower()}")
+            # print("Valores combo:", combo.cget("values"))
+            # print("Valor a asignar:", valor)
+            if combo:
+                if valor is None:
+                    # Asignar valor por defecto según el ajuste
+                    if ajuste == "Relleno":
+                        valor = "Ninguno"
+                    elif ajuste == "Color":
+                        valor = "Negro"
+                try:
+                    # Normaliza valor a formato mostrado en el combo ("Rojo", "Azul", etc.)
+                    texto_combo = valor.strip().lower().capitalize()
+                    if texto_combo in combo.cget("values"):
+                        combo.set(texto_combo)
+                    else:
+                        combo.set("Ninguno")  # fallback si no es válido
+                except Exception as e:
+                    print(f"[ERROR] Al actualizar combobox {ajuste}: {e}")
 
     def aplicar_formato(self, valor, ajuste):
-        valor = int(valor)
 
         seleccionado = self.cbo_editar_texto.get()
         tipo = "texto"
@@ -2381,6 +2432,7 @@ class App(ctk.CTk):
         # Aplica cambios según el ajuste
         
         if ajuste == "Size":
+            valor = int(valor)
             
             
             if tipo == "grafico" or tipo == "imagen":
@@ -2419,16 +2471,15 @@ class App(ctk.CTk):
                 frame.label_imagen.image = img
 
         elif ajuste == "Width":
-
+            valor = int(valor)
             current_height = frame.winfo_height()
            
             width_new = (base_width if tipo=="texto" else base) + valor
-            
             frame.configure(width=width_new)
             frame.place_configure(width=width_new, height=current_height)
 
-
         elif ajuste == "Height":
+            valor = int(valor)
             current_width = frame.winfo_width()
 
             heigth_new = (base_height if tipo=="texto" else base) + valor
@@ -2436,6 +2487,7 @@ class App(ctk.CTk):
             frame.place_configure(width=current_width, height=heigth_new)
 
         elif ajuste == "Redondear":
+            valor = int(valor)
             valor = valor+100
             # Asume que el frame tiene atributo corner_radius si es CTkFrame personalizado
             if hasattr(frame, 'configure'):
@@ -2445,22 +2497,9 @@ class App(ctk.CTk):
                     pass  # algunos widgets pueden no soportar esto
 
         elif ajuste == "Relleno":
-            valor =valor+100
-            # Valor entre 0 y 200
-            h = min(valor * 1.8, 360)  # Escalar a [0, 360]
-            
-            # Convertir HSV → RGB
-            r, g, b = colorsys.hsv_to_rgb(h / 360, 1.0, 1.0)
+            color_nombre = valor.strip().lower()
+            hex_color = self.nombre_a_hex(color_nombre)
 
-            # Si el valor es mayor a 180, mezclamos hacia blanco
-            if valor > 180:
-                t = (valor - 180) / 20  # de 0 a 1
-                r = r * (1 - t) + 1 * t
-                g = g * (1 - t) + 1 * t
-                b = b * (1 - t) + 1 * t
-
-            # RGB → HEX
-            hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
             # Aplica el color al frame    
             if tipo == "grafico":
                 try:
@@ -2493,22 +2532,8 @@ class App(ctk.CTk):
                         pass
 
         elif ajuste == "Color":
-            valor = valor+100
-            h = min(valor * 1.8, 360)  # Escalar a [0, 360] (matiz)
-
-            # HSV → RGB
-            r, g, b = colorsys.hsv_to_rgb(h / 360, 1.0, 1.0)
-
-            # Si el valor es mayor a 180, mezclar hacia negro
-            if valor > 180:
-                t = (valor - 180) / 20  # de 0 a 1
-                t = min(t, 1.0)  # limitar por seguridad
-                r = r * (1 - t)
-                g = g * (1 - t)
-                b = b * (1 - t)
-
-            # RGB → HEX
-            hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+            color_nombre = valor.strip().lower()
+            hex_color = self.nombre_a_hex(color_nombre)
 
             # Aplicar el color según el tipo
             if tipo == "texto":
@@ -2550,6 +2575,34 @@ class App(ctk.CTk):
 
             elif tipo == "imagen":
                 pass
+
+    def nombre_a_hex(self, nombre):
+        colores = {
+            "negro": "#000000",
+            "blanco": "#ffffff",
+            "rojo": "#ff0000",
+            "verde": "#00ff00",
+            "azul": "#0000ff",
+            "amarillo": "#ffff00",
+            "cian": "#00FFFF",
+            "magenta": "#FF00FF",
+            "gris claro": "#D3D3D3",
+            "gris": "#808080",
+            "gris oscuro": "#404040",
+            "naranja": "#FFA500",
+            "rosado": "#FFC0CB",
+            "lima": "#BFFF00",
+            "turquesa": "#40E0D0",
+            "violeta": "#8A2BE2",
+            "lavanda": "#E6E6FA",
+            "dorado": "#FFD700",
+            "plateado": "#C0C0C0",
+            "celeste": "#87CEEB",
+            "aguamarina": "#7FFFD4",
+            "coral": "#FF7F50",
+            "ninguno": "#FFFFFF"
+        }
+        return colores.get(nombre, "#000000")
 
     def __form_setting(self):
         popup_setting = ctk.CTkToplevel(self,
