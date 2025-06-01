@@ -2436,11 +2436,11 @@ class App(ctk.CTk):
             frame.place_configure(width=current_width, height=heigth_new)
 
         elif ajuste == "Redondear":
-            valor =abs(valor)
+            valor = valor+100
             # Asume que el frame tiene atributo corner_radius si es CTkFrame personalizado
             if hasattr(frame, 'configure'):
                 try:
-                    frame.configure(corner_radius=int(valor / 2))
+                    frame.configure(corner_radius=int(valor / 10))
                 except:
                     pass  # algunos widgets pueden no soportar esto
 
