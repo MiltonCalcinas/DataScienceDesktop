@@ -1980,7 +1980,7 @@ class App(ctk.CTk):
 
         # Agregar componentes de ajustes del gráfico
         self.ajustes_graficos = {}
-        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Color"]
+        ajustes_nombre = ["Size","Width","Height","Redondear","Relleno","Color"]
         # Dentro de tu clase, crea un diccionario para guardar ajustes por objeto
         self.valores_ajustes = {
             "texto": {},
@@ -2356,7 +2356,7 @@ class App(ctk.CTk):
         ajustes = self.valores_ajustes[tipo].get(seleccionado, {})
         
         # Lista de todos los ajustes que manejas
-        lista_ajustes = ["Size", "Width", "Height", "Border", "Redondear", "Relleno", "Color"]
+        lista_ajustes = ["Size", "Width", "Height", "Redondear", "Relleno", "Color"]
 
         for ajuste in lista_ajustes:
             valor = ajustes.get(ajuste, 0)
@@ -2461,17 +2461,12 @@ class App(ctk.CTk):
             frame.configure(height=heigth_new)
             frame.place_configure(width=current_width, height=heigth_new)
 
-        elif ajuste == "Border":
-            valor = abs(valor)
-            padding = int(valor / 10)
-            frame.configure(padx=padding, pady=padding)
-
         elif ajuste == "Redondear":
-            valor =abs(valor)
+            valor = valor+100
             # Asume que el frame tiene atributo corner_radius si es CTkFrame personalizado
             if hasattr(frame, 'configure'):
                 try:
-                    frame.configure(corner_radius=int(valor / 2))
+                    frame.configure(corner_radius=int(valor / 10))
                 except:
                     pass  # algunos widgets pueden no soportar esto
 
