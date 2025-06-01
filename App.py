@@ -86,7 +86,9 @@ class App(ctk.CTk):
         self.table_name_list = []
         self.load_font_system() 
         self.crear_interfaz()
-
+        
+        # Variables de control
+        self.notas_guardadas = {}  # Diccionario para almacenar notas por número
         
         # Inicia sesión
         sesion = sesion_guardada()
@@ -249,7 +251,8 @@ class App(ctk.CTk):
                                 image=img_setting,
                                 text="",
                                 width=20,
-                                fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                command=self.__form_setting)
         btn_setting.grid(row=0,column=1)
 
 
@@ -2476,11 +2479,168 @@ class App(ctk.CTk):
             sombra_color = f"#{int(50 + valor):02x}{int(50 + valor):02x}{int(50 + valor):02x}"
             frame.configure(border_color=sombra_color)
 
-    def __form_task(self):
+    def __form_setting(self):
+        popup_setting = ctk.CTkToplevel(self,
+                                        fg_color=self.color.COLOR_FONDO_FRAME,
+                                        )
         
-        if not hasattr(self,'form_task') or not self.form.winfo_exists():
-            self.form_task()
-            self.title("Crea Una Tarea")
+                #centrar ventana
+        popup_setting.update()
+        center_window(popup_setting)
+
+                # Poner en primer plano con foco
+        popup_setting.transient(self)
+        popup_setting.focus_force()
+        popup_setting.lift()
+        popup_setting.grab_set()
+        
+        ctk.CTkLabel(popup_setting,
+                     text="Mi Tabla",
+                     text_color=self.color.COLOR_LETRA_NORMAL
+                     ).grid(row=1,column=0,padx=10,pady=10)
+        
+        cbo_setting=ctk.CTkComboBox(popup_setting,
+                        values=self.table_name_list,
+                        state="readonly",
+                        button_color=self.color.COLOR_RELLENO_WIDGET
+                        )
+        cbo_setting.grid(row=1,column=1,padx=10,pady=10)
+        
+        ctk.CTkLabel(popup_setting,
+                     text="Color Fondo",
+                     text_color=self.color.COLOR_LETRA_NORMAL,
+                     ).grid(row=2,column=0,padx=10,pady=10)
+        
+        df_color = colores.ColorDataFrame()
+        lista_colores = df_color.get_list_color()
+        cbo_color_fondo = ctk.CTkComboBox(popup_setting,
+                        values=lista_colores,
+                        state="readonly",
+                        button_color=self.color.COLOR_RELLENO_WIDGET)
+        cbo_color_fondo.grid(row=2,column=1,padx=10,pady=10)
+
+        def cerrar():
+            popup_setting.destroy()
+
+        ctk.CTkButton(popup_setting,
+                      text="Cancelar",
+                      command=cerrar,
+                      ).grid(row=3,column=0,padx=10,pady=10)
+        ctk.CTkButton(popup_setting,
+                      text="Aplicar",
+                      command=lambda:self.actualizar_interfaz(
+                          cbo_color_fondo.get(),
+                          cbo_setting.get()
+                      ),
+                      ).grid(row=3,column=1,padx=10,pady=10)
+        
+
+    def actualizar_interfaz(self):    
+        pass
+
+
+        
+    def __form_task(self):
+        popup_task = ctk.CTkToplevel(self, fg_color=self.color.COLOR_FONDO_FRAME)
+        popup_task.title("Notas")
+        popup_task.geometry("270x290")
+        popup_task.resizable(False, False)
+
+        popup_task.update()
+        center_window(popup_task)
+
+        popup_task.transient(self)
+        popup_task.focus_force()
+        popup_task.lift()
+        popup_task.grab_set()
+
+        # Configurar columnas simétricas
+        for i in range(4):
+            popup_task.grid_columnconfigure(i, weight=1)
+
+        # Frame principal con scroll
+        scroll_frame = ctk.CTkScrollableFrame(popup_task,
+                                            fg_color=self.color.COLOR_FONDO_APP)
+        scroll_frame.grid(row=1, column=0, rowspan=4, columnspan=4, padx=10, pady=10)
+
+        self.botones_nota = []
+        self.max_botones_nota = 12
+        self.botones_por_fila_nota = 3
+
+        def abrir_ventana_nota(id_nota):
+            nota_window = ctk.CTkToplevel(popup_task)
+            nota_window.title(f"Nota {id_nota}")
+            nota_window.geometry("300x300")
+            nota_window.resizable(False, False)
+            nota_window.update()
+            center_window(nota_window)
+
+            # Ventana modal y en foco
+            nota_window.transient(self)
+            nota_window.grab_set()
+            nota_window.lift()
+            nota_window.focus_force()
+
+            textbox = ctk.CTkTextbox(nota_window, width=280, height=200)
+            textbox.pack(padx=10, pady=(10, 5), expand=True, fill="both")
+            textbox.focus_set()
+            # Si ya existe contenido, cargarlo
+            if id_nota in self.notas_guardadas:
+                textbox.insert("0.0", self.notas_guardadas[id_nota])
+
+            btn_frame = ctk.CTkFrame(nota_window, fg_color="transparent")
+            btn_frame.pack(pady=10)
+
+            def guardar():
+                contenido = textbox.get("0.0", "end").strip()
+                self.notas_guardadas[id_nota] = contenido
+                nota_window.destroy()
+
+            def cancelar():
+                nota_window.destroy()
+
+            btn_guardar = ctk.CTkButton(btn_frame, text="Guardar", command=guardar, width=100)
+            btn_cancelar = ctk.CTkButton(btn_frame, text="Cancelar", command=cancelar, width=100)
+            btn_guardar.grid(row=0, column=0, padx=5)
+            btn_cancelar.grid(row=0, column=1, padx=5)
+
+        def añadir_boton():
+            if len(self.botones_nota) >= self.max_botones_nota:
+                return
+
+            fila = len(self.botones_nota) // self.botones_por_fila_nota
+            columna = len(self.botones_nota) % self.botones_por_fila_nota
+            indice = len(self.botones_nota) + 1
+
+            nuevo_boton = ctk.CTkButton(scroll_frame,
+                                        text=f"Nota {indice}",
+                                        width=55,
+                                        fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                        command=lambda i=indice: abrir_ventana_nota(i))
+            nuevo_boton.grid(row=fila, column=columna, padx=10, pady=10)
+            self.botones_nota.append(nuevo_boton)
+
+        def cerrar():
+            popup_task.destroy()
+
+        boton_agregar = ctk.CTkButton(popup_task, text="+", width=40, height=40,
+                                    command=añadir_boton,
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
+        boton_agregar.grid(row=5, column=1, pady=10, padx=10)
+
+        boton_cerrar = ctk.CTkButton(popup_task, text="Cerrar", width=40, height=40,
+                                    command=cerrar,
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
+        boton_cerrar.grid(row=5, column=2, pady=10, padx=10)
+
+        
+
+        # Luego recorres notas_guardadas
+        for i in range(1, len(self.notas_guardadas) + 1):
+            añadir_boton()  # Esto crea el botón nuevamente y lo vincula con abrir_ventana_nota(i)
+            
+
+        
 
     def set_options(self):
         tipo = self.df[self.y].dtype
@@ -2637,7 +2797,7 @@ class App(ctk.CTk):
                            \nVariables Predictoras: {",".join(predictoras)}
                            \n{nombre_metrica.capitalize()+" (en train"}: {round(rendimiento_train, 4) if isinstance(rendimiento_train, (float, int)) else rendimiento_train}
                            \n{nombre_metrica.capitalize()+" (en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
-                self.agregar_frame_modelo(nombre, info)
+                self.agregar_btn_modelo_entrenado(nombre, info)
                 self.contador_modelos += 1
                 print("rendimiento_train",rendimiento_train)
                 print("Rendimiento:",rendimiento)
@@ -2717,7 +2877,7 @@ class App(ctk.CTk):
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
                            \nScore del Mejor Estimador (en validación): {-round(search.best_score_,4)}"""
-                self.agregar_frame_modelo(nombre, info)
+                self.agregar_btn_modelo_entrenado(nombre, info)
                 self.contador_modelos += 1
 
             elif type_search =="Randomized Search CV":
@@ -2746,11 +2906,11 @@ class App(ctk.CTk):
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
                            \nScore del Mejor Estimador (en validación): {-search.best_score_}"""
-                self.agregar_frame_modelo(nombre, info)
+                self.agregar_btn_modelo_entrenado(nombre, info)
                 self.contador_modelos += 1
 
             
-    def agregar_frame_modelo(self, nombre_modelo, info_texto):
+    def agregar_btn_modelo_entrenado(self, nombre_modelo, info_texto):
         if not hasattr(self, 'modelo_count'):
             self.modelo_count = len(self.frame_modelos.grid_slaves())
 
@@ -2766,7 +2926,7 @@ class App(ctk.CTk):
         btn_info.grid(row=fila,column=columna,padx=10,pady=10,sticky="snew")
 
         # Asegurar que la columna se expanda proporcionalmente
-        self.frame_modelos.grid_columnconfigure(columna, weight=1)
+        #self.frame_modelos.grid_columnconfigure(columna, weight=1)
 
         self.modelo_count += 1
 

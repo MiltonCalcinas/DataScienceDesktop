@@ -51,6 +51,7 @@ class ColorDataFrame():
 
         # print(self.df_color)
         # print(self.df_color.DARK.COLOR_FONDO_APP)
+        
     def get_colores(self,tipo):
         tipo = tipo.upper()
         if tipo == "DARK":
@@ -62,3 +63,6 @@ class ColorDataFrame():
         else:
             raise ValueError(f"La opcion elegido para el color no es valido. color= {tipo}")
         
+    def get_list_color(self):
+        return self.df_color.columns.to_list()
+    
