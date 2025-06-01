@@ -1887,7 +1887,7 @@ class App(ctk.CTk):
         cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
         cuadro_iconos.pack(pady=(0,20))
 
-        cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color="#88001f")
+        cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
         cuadro_variables.pack(fill="both",expand=True)
 
         # Agregar las hojas al dashboard y frames (contenido blanco)
@@ -1940,18 +1940,18 @@ class App(ctk.CTk):
                 contador += 1
 
         #  Agregar seleccion de Variables
-        lbl_var_y = ctk.CTkLabel(cuadro_variables,text="Eje y")
+        lbl_var_y = ctk.CTkLabel(cuadro_variables,text="Eje y",text_color=self.color.COLOR_LETRA_BOTON)
         lbl_var_y.pack()
         self.cbo_var_y = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
         self.cbo_var_y.pack()
-        lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x")
+        lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x",text_color=self.color.COLOR_LETRA_BOTON)
         lbl_var_x.pack()
         self.cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
         self.cbo_var_x.pack(pady=(0,10))
 
         # Agregar componentes de ajustes del gráfico
         self.ajustes_graficos = {}
-        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Sombra"]
+        ajustes_nombre = ["Size","Width","Height","Border","Redondear","Relleno","Color"]
         # Dentro de tu clase, crea un diccionario para guardar ajustes por objeto
         self.valores_ajustes = {
             "texto": {},
@@ -2148,6 +2148,7 @@ class App(ctk.CTk):
 
         nombre  =f"Gráfico {self.num_grafico}"
         frame_movil = MovableResizableFrame(hojas_frame_,300,300)
+        frame_movil.figure = fig
         self.frames_movil_graficos[nombre]=frame_movil
         values = [nombre] + list(self.cbo_editar_grafico.cget("values"))
         self.cbo_editar_grafico.configure(values=values)
@@ -2326,7 +2327,7 @@ class App(ctk.CTk):
         ajustes = self.valores_ajustes[tipo].get(seleccionado, {})
         
         # Lista de todos los ajustes que manejas
-        lista_ajustes = ["Size", "Width", "Height", "Border", "Redondear", "Relleno", "Sombra"]
+        lista_ajustes = ["Size", "Width", "Height", "Border", "Redondear", "Relleno", "Color"]
 
         for ajuste in lista_ajustes:
             valor = ajustes.get(ajuste, 0)
@@ -2367,11 +2368,12 @@ class App(ctk.CTk):
             base = 300
         elif tipo == "imagen":
             frame = self.frames_movil_imagen.get(seleccionado)
+            base = 300
         else:
             return
 
         if not frame:
-            print("No has seleccionado Gráfico")
+            print("No has seleccionado Elemento")
             return
         # Aplica cambios según el ajuste
         
@@ -2432,7 +2434,8 @@ class App(ctk.CTk):
 
         elif ajuste == "Border":
             valor = abs(valor)
-            frame.configure(border_width=int(valor / 10))  # escala
+            padding = int(valor / 10)
+            frame.configure(padx=padding, pady=padding)
 
         elif ajuste == "Redondear":
             valor =abs(valor)
@@ -2444,7 +2447,7 @@ class App(ctk.CTk):
                     pass  # algunos widgets pueden no soportar esto
 
         elif ajuste == "Relleno":
-            valor =abs(valor)
+            valor =valor+100
             # Valor entre 0 y 200
             h = min(valor * 1.8, 360)  # Escalar a [0, 360]
             
@@ -2460,21 +2463,95 @@ class App(ctk.CTk):
 
             # RGB → HEX
             hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
-            # Aplica el color al frame
-            try:
-                frame.configure(fg_color=hex_color)
-            except Exception:
-                pass  # En caso de que no tenga fg_color
-            for hijo in frame.winfo_children():
+            # Aplica el color al frame    
+            if tipo == "grafico":
                 try:
-                    hijo.configure(fg_color=hex_color)
+                    if hasattr(frame, "figure"):
+                        fig = frame.figure
+                        if fig.axes:
+                            ax = fig.axes[0]
+                            fig.patch.set_facecolor(hex_color)
+                            ax.set_facecolor(hex_color)
+                            fig.canvas.draw()
+                            fig.canvas.get_tk_widget().update()
+                            print(f"[INFO] Fondo del gráfico '{seleccionado}' cambiado a {hex_color}")
+                        else:
+                            print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
+                    else:
+                        print(f"[ERROR] El frame '{seleccionado}' no tiene atributo 'figure'")
+                except Exception as e:
+                    print(f"[ERROR] No se pudo actualizar fondo del gráfico '{seleccionado}':", e)
+
+            else:
+                # Aplicar color de fondo a widgets normales (texto, imagen, etc.)
+                try:
+                    frame.configure(fg_color=hex_color)
+                except Exception:
+                    pass
+                for hijo in frame.winfo_children():
+                    try:
+                        hijo.configure(fg_color=hex_color)
+                    except Exception:
+                        pass
+
+        elif ajuste == "Color":
+            valor = valor+100
+            h = min(valor * 1.8, 360)  # Escalar a [0, 360] (matiz)
+
+            # HSV → RGB
+            r, g, b = colorsys.hsv_to_rgb(h / 360, 1.0, 1.0)
+
+            # Si el valor es mayor a 180, mezclar hacia negro
+            if valor > 180:
+                t = (valor - 180) / 20  # de 0 a 1
+                t = min(t, 1.0)  # limitar por seguridad
+                r = r * (1 - t)
+                g = g * (1 - t)
+                b = b * (1 - t)
+
+            # RGB → HEX
+            hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+
+            # Aplicar el color según el tipo
+            if tipo == "texto":
+                try:
+                    for hijo in frame.winfo_children():
+                        hijo.configure(fg=hex_color)
                 except Exception:
                     pass
 
-        elif ajuste == "Sombra":
-            # No hay sombra en CTkFrame por defecto. Puedes usar un color más oscuro para simular.
-            sombra_color = f"#{int(50 + valor):02x}{int(50 + valor):02x}{int(50 + valor):02x}"
-            frame.configure(border_color=sombra_color)
+            elif tipo == "grafico":
+                try:
+                    if hasattr(frame, "figure"):
+                        fig = frame.figure
+                        if fig.axes:
+                            ax = fig.axes[0]
+
+                            # Cambiar colores del título, etiquetas y ejes
+                            ax.title.set_color(hex_color)
+                            ax.xaxis.label.set_color(hex_color)
+                            ax.yaxis.label.set_color(hex_color)
+                            ax.tick_params(axis='x', colors=hex_color)
+                            ax.tick_params(axis='y', colors=hex_color)
+
+                            # Cambiar colores de etiquetas de ticks
+                            for label in ax.get_xticklabels():
+                                label.set_color(hex_color)
+                            for label in ax.get_yticklabels():
+                                label.set_color(hex_color)
+
+                            fig.canvas.draw()
+                            fig.canvas.get_tk_widget().update()
+                            print(f"[INFO] Color del gráfico '{seleccionado}' actualizado a {hex_color}")
+                        else:
+                            print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
+                    else:
+                        print(f"[ERROR] El frame '{seleccionado}' no tiene figura asociada.")
+                except Exception as e:
+                    print(f"[ERROR] No se pudo actualizar color del gráfico '{seleccionado}':", e)
+
+            elif tipo == "imagen":
+                pass
 
     def __form_task(self):
         
