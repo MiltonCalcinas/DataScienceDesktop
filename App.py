@@ -138,6 +138,7 @@ class App(ctk.CTk):
             if not login.is_new_user:
                 self.get_table_name_list()
                 self.try_load_data_from_mysql()
+                self.try_load_contenido()
             else:
                 self.create_pop_load_data()
         
@@ -282,6 +283,15 @@ class App(ctk.CTk):
                                 command=self.__form_setting)
         btn_setting.grid(row=0,column=1)
 
+        img_save = ctk.CTkImage(light_image=Image.open(r"iconos\ico_save.png"),size=(20,20))
+        btn_save= ctk.CTkButton(self.menu,
+                                image=img_save,
+                                text="",
+                                width=20,
+                                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                command=self.__save_all)
+        btn_save.grid(row=0,column=2)
+        
 
     def crear_notebook(self):
         """         CON ESTE CODIGO CREA EL NOTEBOOK Y LAS PESTAÑAS (LUEGO AÑADO LOS OBJETOS,ETC)        """
@@ -747,7 +757,6 @@ class App(ctk.CTk):
         }
 
         resultados = []
-        #self.result_statistics.clear()  # Limpia resultados anteriores
 
         for cbo_stat, cbo_var in self.statistics_combos:
             stat_name = cbo_stat.get()
@@ -762,7 +771,7 @@ class App(ctk.CTk):
                         "estadistica": stat_name,
                         "valor": float(valor)
                     }
-                    self.result_statistics.append(resultado)
+                    self.result_statistics.append(f"{stat_name.title()} de '{var_name}': {valor:.4f}")
                     resultados.append(f"{stat_name.title()} de '{var_name}': {valor:.4f}")
 
                 except Exception as e:
@@ -804,10 +813,18 @@ class App(ctk.CTk):
         popup = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         popup.title("Historial de Estadísticas")
         popup.geometry("400x300")
+        popup.resizable(False,False)
+
+        popup.update()
+        center_window(popup)
+
+        popup.transient(self)
+        popup.lift()
+        popup.focus_force()
+        popup.grab_set() # bloque ventana principal
 
         texto = "\n".join(
-            f"{r['estadistica'].title()} de '{r['variable']}': {r['valor']:.4f}"
-            for r in self.result_statistics
+             self.result_statistics
         )
 
         text_widget = ctk.CTkTextbox(popup, wrap="word")
@@ -2023,7 +2040,7 @@ class App(ctk.CTk):
             self.ajustes_graficos[f"sld_{nombre}"].grid(row=i, column=1)
 
         # Relleno
-        self.lbl_relleno = ctk.CTkLabel(panel_formato, text="Relleno")
+        self.lbl_relleno = ctk.CTkLabel(panel_formato, text="Relleno",text_color=self.color.COLOR_LETRA_NEGRITA)
         self.lbl_relleno.grid(row=len(ajustes_con_slider)+1, column=0)
 
         self.cmb_relleno = ctk.CTkComboBox(panel_formato,
@@ -2037,7 +2054,7 @@ class App(ctk.CTk):
         self.ajustes_graficos["cmb_relleno"] = self.cmb_relleno
 
         # Color
-        self.lbl_color = ctk.CTkLabel(panel_formato, text="Color")
+        self.lbl_color = ctk.CTkLabel(panel_formato, text="Color",text_color=self.color.COLOR_LETRA_NEGRITA)
         self.lbl_color.grid(row=len(ajustes_con_slider)+2, column=0)
 
         self.cmb_color = ctk.CTkComboBox(panel_formato,
@@ -3119,10 +3136,8 @@ class App(ctk.CTk):
                                 command=lambda: self.mostrar_info_modelo(nombre_modelo, info_texto),
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_info.grid(row=fila,column=columna,padx=10,pady=10,sticky="snew")
-
-        # Asegurar que la columna se expanda proporcionalmente
-        #self.frame_modelos.grid_columnconfigure(columna, weight=1)
-
+        
+        self.model_info_list.append(info_texto)
         self.modelo_count += 1
 
     def mostrar_info_modelo(self, nombre, info):
@@ -3225,9 +3240,14 @@ class App(ctk.CTk):
         # Estilo de los encabezados (columnas)
         style.configure("Treeview.Heading",
                         background=self.color.COLOR_RELLENO_WIDGET,
-                        foreground= self.color.COLOR_BORDE_WIDGET,
+                        foreground= self.color.COLOR_LETRA_BOTON,
                         padding=(10, 10),
                         font=("Arial", 10, "bold"))
+        # Estilo al hacer hover sobre encabezado
+        style.map("Treeview.Heading",
+                background=[("active", self.color.COLOR_RELLENO_COLUMNA_HOVER)],
+                foreground=[("active", self.color.COLOR_LETRA_BOTON)])
+
         
     def actualizar_colores_widgets(self):
         self.__style_for_tabla()
@@ -3350,3 +3370,64 @@ class App(ctk.CTk):
                     if isinstance(sub_frame, ctk.CTkFrame):
                         sub_frame.configure(fg_color=self.color.COLOR_FONDO_FRAME)
             self.actualizar_fondos_labelframe(child)
+
+
+    def __save_all(self):
+        url = config.VIEW_GUARDAR_CONTENIDO
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Token {self.auth_token}"
+        }
+
+        payload = {
+            "table_name": self.table_name,
+            "contenidos": {
+                "nota": list(self.notas_guardadas.values()),             # Lista de strings
+                "estadistica": self.result_statistics,                   # Lista de strings o dicts
+                "modelo": self.model_info_list ,                         # Lista de strings
+            }
+        }
+
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+        if response.status_code == 200:
+            print("✔ Todo el contenido fue guardado correctamente.")
+        else:
+            print(f"❌ Error al guardar: {response.status_code} - {response.text}")
+
+
+
+    def try_load_contenido(self):
+        try:
+            if (not self.table_name ) or (not self.auth_token):
+                print("Falta table_name o auth_token")
+                return
+            
+            url = config.VIEW_GUARDAR_CONTENIDO
+            params = {
+                "table_name": self.table_name,
+            }
+
+            headers = {
+                "Authorization": f"Token {self.auth_token}"
+            }
+
+            response = requests.get(url, params=params, headers=headers)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                self.notas_guardadas = { i:nota for i,nota in enumerate(data.get("notas"))}
+                self.result_statistics = data.get("estadisticas")
+                self.model_info_list = data.get("modelos")
+                
+
+
+                print("Notas:", data.get("notas"))
+                print("Estadísticas:", data.get("estadisticas"))
+                print("Modelos:", data.get("modelos"))
+
+            else:
+                print("Error al obtener los datos:", response.status_code)
+        except Exception as ex:
+            print("Errror al intentar cargar los contenidos",ex)
