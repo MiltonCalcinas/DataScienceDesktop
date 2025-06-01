@@ -21,6 +21,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from login import Login
 import operator
 import pandas.api.types as ptypes
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler,OneHotEncoder
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.svm import SVR, SVC
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
@@ -1053,6 +1054,9 @@ class App(ctk.CTk):
                 'exp': np.exp,
                 'square':np.square,
                 'abs':np.abs,
+                'one hot encoder': OneHotEncoder(sparse_output=False),
+                'ordinal encoder':OrdinalEncoder(),
+                'Standard Scaler ':StandardScaler(),
             }
         
         if math_functions.get(function,None) is None:
@@ -1074,8 +1078,10 @@ class App(ctk.CTk):
             popup_choose_columns.grab_set()
 
             group_check = {}
-            columns_number = self.df.select_dtypes(include='number').columns
-            for i,col in enumerate(columns_number):
+            columns_number = self.df.head().select_dtypes(include='number').columns.to_list()
+            columns_object = self.df.head().select_dtypes(include='object').columns.to_list()
+            columns_show = columns_object if function.endswith('encoder') else columns_number
+            for i,col in enumerate(columns_show):
                 var = ctk.BooleanVar()
                 chk = ctk.CTkCheckBox(
                                     popup_choose_columns,
@@ -1096,13 +1102,34 @@ class App(ctk.CTk):
 
     def __transfrom(self,group_check,function,math_functions,popup_choose_columns):
         try:
-            print("-- on click columnas elegidas:")
-            cols =  [ col for col,var in group_check.items() if var.get()]   
-            cols_func = [f"{function}_{col}" for col in cols]
-            print(cols)
-            self.df[cols_func]= math_functions[function](self.df[cols])
-            self.show_tree_viewport()
-            popup_choose_columns.destroy()
+            cols =  [ col for col,var in group_check.items() if var.get()]  
+            if function == 'one hot encoder':
+                
+                array = math_functions[function].fit_transform(self.df[cols])
+                self.df[math_functions[function].get_feature_names_out()] = array
+                self.show_tree_viewport()
+                popup_choose_columns.destroy()
+            elif function == 'ordinal encoder':
+                
+                array = math_functions[function].fit_transform(self.df[cols])
+                cols_func = [f"ordinal_{col}" for col in cols]
+                self.df[cols_func] = array
+                self.show_tree_viewport()
+                popup_choose_columns.destroy()
+            elif function == 'Standard Scaler':
+                array = math_functions[function].fit_transform(self.df[cols])
+                cols_func = [f"z_{col}" for col in cols]
+                self.df[cols_func] = array
+                self.show_tree_viewport()
+                popup_choose_columns.destroy()
+            else:
+                print("-- on click columnas elegidas:")
+                 
+                cols_func = [f"{function}_{col}" for col in cols]
+                print(cols)
+                self.df[cols_func]= math_functions[function](self.df[cols])
+                self.show_tree_viewport()
+                popup_choose_columns.destroy()
 
         except Exception as ex:
             messagebox.showerror("Campos Invalidos para la Transformación", ex)
@@ -1463,6 +1490,9 @@ class App(ctk.CTk):
                                           "exp",
                                           "square",
                                           "abs",
+                                          'one hot encoder',
+                                          'ordinal encoder',
+                                          'Standard Scaler',
                                           "-- Ninguna"
                                            ],
                                            command= self.__transform_variables,
