@@ -2330,7 +2330,7 @@ class App(ctk.CTk):
         ajustes = self.valores_ajustes[tipo].get(seleccionado, {})
         
         # Lista de todos los ajustes que manejas
-        lista_ajustes = ["Size", "Width", "Height", "Border", "Redondear", "Relleno", "Color"]
+        lista_ajustes = ["Size", "Width", "Height", "Redondear", "Relleno", "Color"]
 
         for ajuste in lista_ajustes:
             valor = ajustes.get(ajuste, 0)
