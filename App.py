@@ -1186,18 +1186,19 @@ class App(ctk.CTk):
         if table_name in self.table_name_list:
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
-        else:
-            print("--- añadiendo tabla_name---")
-            self.table_name_list.append(table_name)
-            print("---saving table name")
-            self.post_table_name(table_name)
-            self.table_name = table_name
+        
+            
 
 
         try:
             print("--- Mostrando tabla csv")
             self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
             self.guardar_en_bbdd()
+            print("--- añadiendo tabla_name---")
+            self.table_name_list.append(table_name)
+            print("---saving table name")
+            self.post_table_name(table_name)
+            self.table_name = table_name
             self.show_tree_viewport()
         except Exception as ex:
             print("Error al importar CSV",ex)
@@ -1217,17 +1218,18 @@ class App(ctk.CTk):
         if table_name in self.table_name_list:
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
-        else:
-            print("--- post guardar nombre de tabla---")
-            self.table_name_list.append(table_name)
-            self.post_table_name(table_name)
-            self.table_name = table_name
+        
+            
         print("--- solicitar post excel")
         print("--datos: ",self.url_excel)
         print("Nombre hoja:",sheet_name)
 
         try:
             self.df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
+            print("--- post guardar nombre de tabla---")
+            self.table_name_list.append(table_name)
+            self.post_table_name(table_name)
+            self.table_name = table_name
             self.guardar_en_bbdd()
             self.show_tree_viewport()
             
@@ -1249,12 +1251,9 @@ class App(ctk.CTk):
         if table_name in self.table_name_list:
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
-        else:
+       
 
-            print("--- post guardar nombre de tabla---")
-            self.table_name_list.append(table_name)
-            self.post_table_name(table_name)
-            self.table_name = table_name
+            
 
         sgbd_ = kwargs["SGBD"]
         nombre_tabla =  kwargs["nombre_tabla"]
@@ -1274,6 +1273,11 @@ class App(ctk.CTk):
             print("engine",str_engine)
             engine = sqlalchemy.create_engine(str_engine)
             self.df = pd.read_sql(consulta,engine)
+            
+            print("--- post guardar nombre de tabla---")
+            self.table_name_list.append(table_name)
+            self.post_table_name(table_name)
+            self.table_name = table_name
             self.guardar_en_bbdd()
             self.show_tree_viewport()
             
