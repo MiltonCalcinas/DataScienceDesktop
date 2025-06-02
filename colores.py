@@ -56,7 +56,10 @@ class ColorDataFrame():
         # print(self.df_color.DARK.COLOR_FONDO_APP)
         
     def get_colores(self,tipo):
-        tipo = tipo.upper()
+        if tipo:
+            tipo = tipo.upper()
+        else:
+            tipo = "LIGHT"
         if tipo == "DARK":
             return self.df_color.DARK
         elif tipo == "LIGHT":
