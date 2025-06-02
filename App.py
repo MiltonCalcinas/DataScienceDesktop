@@ -125,6 +125,7 @@ class App(ctk.CTk):
             self.auth_token = s.get("auth_token")
             self.get_table_name_list()
             self.try_load_data_from_mysql()
+            self.try_load_contenido()
         else:
             print("Abriendo login")
             login = Login(self,self.mode)  # le pasas la ventana padre
@@ -281,7 +282,7 @@ class App(ctk.CTk):
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
                                 command=self.__form_setting)
-        btn_setting.grid(row=0,column=1)
+        btn_setting.grid(row=0,column=1,padx=(0,10))
 
         img_save = ctk.CTkImage(light_image=Image.open(r"iconos\ico_save.png"),size=(20,20))
         btn_save= ctk.CTkButton(self.menu,
@@ -290,7 +291,7 @@ class App(ctk.CTk):
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
                                 command=self.__save_all)
-        btn_save.grid(row=0,column=2)
+        btn_save.grid(row=0,column=2,padx=(0,10))
         
 
     def crear_notebook(self):
@@ -1073,7 +1074,7 @@ class App(ctk.CTk):
                 'abs':np.abs,
                 'one hot encoder': OneHotEncoder(sparse_output=False),
                 'ordinal encoder':OrdinalEncoder(),
-                'Standard Scaler ':StandardScaler(),
+                'Standard Scaler':StandardScaler(),
             }
         
         if math_functions.get(function,None) is None:
@@ -1676,7 +1677,7 @@ class App(ctk.CTk):
         header_hijo.grid_columnconfigure(2, weight=4)  # 40%
         header_hijo.grid_columnconfigure(3, weight=2)  # 20%
 
-
+        
 
 
 
@@ -1779,7 +1780,6 @@ class App(ctk.CTk):
                                       command=self.mostrar_historial_estadisticas,
                                       fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_historial.grid(row=0,column=0,padx=10,pady=10,sticky="snew")
-
 
     def crear_dashboard(self):
         # Frame principal
@@ -3007,8 +3007,8 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize()+" (en train"}: {round(rendimiento_train, 4) if isinstance(rendimiento_train, (float, int)) else rendimiento_train}
-                           \n{nombre_metrica.capitalize()+" (en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
+                           \n{nombre_metrica +" (en train)"}: {round(rendimiento_train, 4) if isinstance(rendimiento_train, (float, int)) else rendimiento_train}
+                           \n{nombre_metrica +" (en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}"""
                 self.agregar_btn_modelo_entrenado(nombre, info)
                 self.contador_modelos += 1
                 print("rendimiento_train",rendimiento_train)
@@ -3084,7 +3084,7 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize() +"(en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \n{nombre_metrica +"(en test)"}: {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
@@ -3113,7 +3113,7 @@ class App(ctk.CTk):
                 info = f"""Modelo: {select_model}
                            \nVariable Dependiente: {self.y}
                            \nVariables Predictoras: {",".join(predictoras)}
-                           \n{nombre_metrica.capitalize()} +"(en test)": {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
+                           \n{nombre_metrica} +"(en test)": {round(rendimiento, 4) if isinstance(rendimiento, (float, int)) else rendimiento}
                            \nTipo Busqueda: {type_search}
                            \nCV: {cv}
                            \nMejores parametros: {search.best_params_}
@@ -3122,7 +3122,7 @@ class App(ctk.CTk):
                 self.contador_modelos += 1
 
             
-    def agregar_btn_modelo_entrenado(self, nombre_modelo, info_texto):
+    def agregar_btn_modelo_entrenado(self, nombre_modelo, info_texto,append_list = True):
         if not hasattr(self, 'modelo_count'):
             self.modelo_count = len(self.frame_modelos.grid_slaves())
 
@@ -3137,7 +3137,8 @@ class App(ctk.CTk):
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_info.grid(row=fila,column=columna,padx=10,pady=10,sticky="snew")
         
-        self.model_info_list.append(info_texto)
+        if append_list:
+            self.model_info_list.append(info_texto)
         self.modelo_count += 1
 
     def mostrar_info_modelo(self, nombre, info):
@@ -3394,8 +3395,8 @@ class App(ctk.CTk):
             print("✔ Todo el contenido fue guardado correctamente.")
         else:
             print(f"❌ Error al guardar: {response.status_code} - {response.text}")
-
-
+        print("Guardando tabla en bbdd (mysql)")
+        self.guardar_en_bbdd()
 
     def try_load_contenido(self):
         try:
@@ -3403,7 +3404,7 @@ class App(ctk.CTk):
                 print("Falta table_name o auth_token")
                 return
             
-            url = config.VIEW_GUARDAR_CONTENIDO
+            url = config.VIEW_OBTENER_CONTENIDO
             params = {
                 "table_name": self.table_name,
             }
@@ -3417,7 +3418,7 @@ class App(ctk.CTk):
             if response.status_code == 200:
                 data = response.json()
 
-                self.notas_guardadas = { i:nota for i,nota in enumerate(data.get("notas"))}
+                self.notas_guardadas = { (i+1):nota for i,nota in enumerate(data.get("notas"))}
                 self.result_statistics = data.get("estadisticas")
                 self.model_info_list = data.get("modelos")
                 
@@ -3426,6 +3427,13 @@ class App(ctk.CTk):
                 print("Notas:", data.get("notas"))
                 print("Estadísticas:", data.get("estadisticas"))
                 print("Modelos:", data.get("modelos"))
+
+                print("que tengo self.model_info_list:",self.model_info_list)
+                for i in range(len(self.model_info_list)):
+                    nombre_modelo = self.model_info_list[i].split("\n")[0].strip()[8:]
+                    self.agregar_btn_modelo_entrenado(f'Modelo {self.contador_modelos}:{nombre_modelo}',self.model_info_list[i],
+                                                      append_list =False)
+                    self.contador_modelos+=1
 
             else:
                 print("Error al obtener los datos:", response.status_code)
