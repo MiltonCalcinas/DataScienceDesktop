@@ -631,7 +631,7 @@ class App(ctk.CTk):
         variable_conversion.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         variable_column.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna",fg_color=self.color.COLOR_RELLENO_WIDGET)
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
         chk_column.grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
 
         # Guardar los widgets en una lista
@@ -1627,7 +1627,11 @@ class App(ctk.CTk):
         pop.grab_set()
         pop.update()
         ctk.CTkLabel(pop,text="Selecciona El tipo de Problema").grid(row=0,padx=20,pady=10)
-        cbo =ctk.CTkComboBox(pop,values=["Regresion","Clasificacion"],command=self.establecer_problema,state="readonly")
+        cbo =ctk.CTkComboBox(pop,
+                             values=["Regresion","Clasificacion"],
+                             button_color=self.color.COLOR_RELLENO_WIDGET,
+                             command=self.establecer_problema,state="readonly"
+                            )
         cbo.grid(row=1,padx=20,pady=10)
         cbo.set("Regresion")
         
@@ -2778,7 +2782,7 @@ class App(ctk.CTk):
         # Frame principal con scroll
         scroll_frame = ctk.CTkScrollableFrame(popup_task,
                                             fg_color=self.color.COLOR_FONDO_APP)
-        scroll_frame.grid(row=1, column=0, rowspan=4, columnspan=4, padx=10, pady=10)
+        scroll_frame.grid(row=1, column=0, rowspan=4, columnspan=4, padx=10, pady=10, sticky="ew")
 
         self.botones_nota = []
         self.max_botones_nota = 12
