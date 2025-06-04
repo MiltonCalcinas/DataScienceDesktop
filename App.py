@@ -217,6 +217,7 @@ class App(ctk.CTk):
 
     def create_pop_load_data(self):
         pop_load_data = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
+        pop_load_data.title("Cargar Datos")
         pop_load_data.resizable(False, False)
 
         # Mostrar en primer  plano
