@@ -966,6 +966,7 @@ class App(ctk.CTk):
         # Combo de tipo de gráfico
         cbo_tipo = ctk.CTkComboBox(self.scroll_frame,
                                 values=values,
+                                button_color=self.color.COLOR_RELLENO_WIDGET, 
                                 command=lambda valor, fila=fila: self._type_graph(valor, fila))
         cbo_tipo.grid(row=fila, column=0, padx=(20, 20), pady=(10, 20))
         
