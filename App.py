@@ -1919,7 +1919,7 @@ class App(ctk.CTk):
                                           state="readonly",
                                           command=lambda v: self.seleccionar_elemento("grafico", v)
                                           )
-        self.cbo_editar_grafico.set("Elegir Grafico")
+        self.cbo_editar_grafico.set("Elegir Gráfico")
         self.cbo_editar_grafico.pack(padx=5, pady=(5, 10), fill="x")
 
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
@@ -2137,18 +2137,18 @@ class App(ctk.CTk):
 
     def seleccionar_elemento(self, tipo, value):
         if tipo == "texto":
-            self.cbo_editar_grafico.set("")
-            self.cbo_editar_imagen.set("")
+            self.cbo_editar_grafico.set("Elegir Gráfico")
+            self.cbo_editar_imagen.set("Elegir Imagen")
             self.clean_menu_editar(value)
             self.actualizar_sliders(tipo,value)
         elif tipo == "grafico":
-            self.cbo_editar_texto.set("")
-            self.cbo_editar_imagen.set("")
+            self.cbo_editar_texto.set("Elegir Texto")
+            self.cbo_editar_imagen.set("Elegir Imagen")
             self.actualizar_sliders(tipo,value)
 
         elif tipo == "imagen":
-            self.cbo_editar_texto.set("")
-            self.cbo_editar_grafico.set("")
+            self.cbo_editar_texto.set("Elegir Texto")
+            self.cbo_editar_grafico.set("Elegir Gráfico")
             self.actualizar_sliders(tipo,value)
 
     def clean_menu_editar(self,value):
@@ -2483,16 +2483,18 @@ class App(ctk.CTk):
                     print(f"[ERROR] Al actualizar combobox {ajuste}: {e}")
 
     def aplicar_formato(self, valor, ajuste):
-
-        seleccionado = self.cbo_editar_texto.get()
-        tipo = "texto"
-        if not seleccionado:
-            seleccionado = self.cbo_editar_grafico.get()
+        seleccionado = None
+        tipo = None
+        if self.cbo_editar_texto.get() in self.cbo_editar_texto.cget("values"):
+            tipo = "texto"
+            seleccionado = self.cbo_editar_texto.get()
+        if self.cbo_editar_grafico.get() in self.cbo_editar_grafico.cget("values"):
             tipo = "grafico"
-        if not seleccionado:
-            seleccionado = self.cbo_editar_imagen.get()
+            seleccionado = self.cbo_editar_grafico.get()
+        if self.cbo_editar_imagen.get() in self.cbo_editar_imagen.cget("values"):
             tipo = "imagen"
-        if not seleccionado:
+            seleccionado = self.cbo_editar_imagen.get()
+        if not tipo:
             return
         
          # Guardar el valor del slider para este objeto y ajuste
@@ -2626,7 +2628,7 @@ class App(ctk.CTk):
             if tipo == "texto":
                 try:
                     for hijo in frame.winfo_children():
-                        hijo.configure(fg=hex_color)
+                        hijo.configure(text_color=hex_color)
                 except Exception:
                     pass
 
