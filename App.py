@@ -3402,6 +3402,31 @@ class App(ctk.CTk):
         print("Guardando tabla en bbdd (mysql)")
         self.guardar_en_bbdd()
 
+
+        # Enviar datos de gráficos
+        
+        # headers = {
+        #     "Authorization": f"Token {self.auth_token}",
+        #     "Content-Type": "application/json"
+        # }
+
+        # # Enviar datos
+        # data = {
+        #     "tipo": "barra",
+        #     "datos": {"valores": [10, 20, 30], "etiquetas": ["A", "B", "C"]},
+        #     "posicion": {"x": 100, "y": 200},
+        #     "tamaño": {"width": 400, "height": 300},
+        #     "color": "#FF0000",
+        #     "titulo": "Gráfico del usuario"
+        # }
+
+        # response = requests.post(config.VIEW_GRAFICOS, json=data, headers=headers)
+        # print(response.status_code)
+        # print(response.json())
+
+
+
+
     def try_load_contenido(self):
         try:
             if (not self.table_name ) or (not self.auth_token):
@@ -3439,6 +3464,19 @@ class App(ctk.CTk):
                                                       append_list =False)
                     self.contador_modelos+=1
 
+
+                # Recibir Datos de Gráficos
+                # headers = {
+                #     "Authorization": f"Token {self.auth_token}",
+                #     "Content-Type": "application/json"
+                # }
+                
+                # response = requests.get(config.VIEW_GRAFICOS, headers=headers)
+
+                # if response.status_code == 200:
+                #     graficos = response.json()
+                #     # for grafico in graficos:
+                #     #     self.crear_frame_desde_datos(grafico)
             else:
                 print("Error al obtener los datos:", response.status_code)
         except Exception as ex:
