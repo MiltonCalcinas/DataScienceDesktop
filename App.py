@@ -242,7 +242,9 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(pop_load_data,
                         text=tipo,
                         command=lambda t=tipo: self.__ventana_conexion(t,pop_load_data),
-                        fg_color=self.color.COLOR_RELLENO_WIDGET
+                        fg_color=self.color.COLOR_RELLENO_WIDGET,
+                        border_color=self.color.COLOR_BORDE_WIDGET,
+                        border_width=1
                         )
             btn.grid(row=i+1, column=0, padx=20, pady=10)
             btn_list.append(btn)
@@ -254,6 +256,7 @@ class App(ctk.CTk):
         self.minsize(750,600)
 
         self.__style_for_tabla()
+        self.__style_for_labelframe()
 
         self.crear_sidebar()
         #----             añadir penstañas a la interfaz       ----#
@@ -273,7 +276,9 @@ class App(ctk.CTk):
                                 text="",
                                 width=20,
                                 command=self.__form_task,
-                                fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1)
         btn_task.grid(row=0,column=0,padx=(0,10),pady=(10,0))
 
         img_setting = ctk.CTkImage(light_image=Image.open(r"iconos\ico_setting.png"),size=(20,20))
@@ -282,6 +287,8 @@ class App(ctk.CTk):
                                 text="",
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=self.__form_setting)
         btn_setting.grid(row=0,column=1,padx=(0,10),pady=(10,0))
 
@@ -291,6 +298,8 @@ class App(ctk.CTk):
                                 text="",
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=self.__save_all)
         btn_save.grid(row=0,column=2,padx=(0,10),pady=(10,0))
         
@@ -330,15 +339,23 @@ class App(ctk.CTk):
 
         ctk.CTkButton(self.pop_filter, text="+", width=50,
                     command=self.add_variable_filter,
+                    border_color=self.color.COLOR_BORDE_WIDGET,
+                    border_width=1,
                     fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=1, column=0, padx=(0, 20), pady=(0, 10))
 
         ctk.CTkButton(self.pop_filter, text="Filtrar", command=self.exe_filter,
+                      border_color=self.color.COLOR_BORDE_WIDGET,
+                      border_width=1,
                       fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=2, column=0, padx=(0, 20), pady=(0, 20))
         
         ctk.CTkButton(self.pop_filter, text="Filtrar y Guardar", command=lambda :self.exe_filter(save=True),
+                      border_color=self.color.COLOR_BORDE_WIDGET,
+                      border_width=1,
                       fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=2, column=1, padx=(0, 20), pady=(0, 20))
         
         ctk.CTkButton(self.pop_filter, text="Descartar Filtros", command=self.descartar_filtro,
+                      border_color=self.color.COLOR_BORDE_WIDGET,
+                      border_width=1,
                       fg_color=self.color.COLOR_RELLENO_WIDGET).grid(row=2, column=2, padx=(0, 20), pady=(0, 20))
     
     def descartar_filtro(self):
@@ -562,7 +579,10 @@ class App(ctk.CTk):
             self.cbo_ANO.set("A. No Superivosado")
             top.destroy()
 
-        ctk.CTkButton(top, text="Aplicar", command=aplicar).pack(pady=10)
+        ctk.CTkButton(top, text="Aplicar",
+                border_color=self.color.COLOR_BORDE_WIDGET,
+                border_width=1,
+                command=aplicar).pack(pady=10)
 
     def __convert_data_type(self):
         self.filas_conversion = []
@@ -614,14 +634,18 @@ class App(ctk.CTk):
                                           text="+",
                                           width=50,
                                           command=lambda:self.add_variable_conversion(values),
-                                          fg_color=self.color.COLOR_RELLENO_WIDGET
+                                          fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                          border_color=self.color.COLOR_BORDE_WIDGET,
+                                          border_width=1
                                           )
         self.btn_add_variables.grid(row=1,column=0,pady=(0,10))
 
         self.btn_conversion = ctk.CTkButton(self.pop_conversion,
                                   text="Convertir Tipo",
                                   command=self.__conversion,
-                                  fg_color=self.color.COLOR_RELLENO_WIDGET
+                                  fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                  border_color=self.color.COLOR_BORDE_WIDGET,
+                                  border_width=1
                                   )
         self.btn_conversion.grid(row=1,column=1,pady=(0,10))
 
@@ -726,11 +750,15 @@ class App(ctk.CTk):
         self.btn_add_variables = ctk.CTkButton(self.popup_statistics,
                                           text="+",
                                           width=50,
+                                          border_color=self.color.COLOR_BORDE_WIDGET,
+                                          border_width=1,
                                           command=lambda:self.add_variable_statistics(values),fg_color=self.color.COLOR_RELLENO_WIDGET)
         self.btn_add_variables.grid(row=2,column=0,pady=(0,10))
 
         self.btn_statistics = ctk.CTkButton(self.popup_statistics,
                                   text="Calcular",
+                                  border_color=self.color.COLOR_BORDE_WIDGET,
+                                  border_width=1,
                                   command=self.__statistics,fg_color=self.color.COLOR_RELLENO_WIDGET)
         self.btn_statistics.grid(row=2,column=1,pady=(0,10))
 
@@ -877,6 +905,8 @@ class App(ctk.CTk):
         self.btn_add_variables = ctk.CTkButton(self.popup_generate_graph,
                                           text="+",
                                           width=50,
+                                          border_color=self.color.COLOR_BORDE_WIDGET,
+                                          border_width=1,
                                           command=lambda:self.add_variable(values),fg_color=self.color.COLOR_RELLENO_WIDGET)
         self.btn_add_variables.grid(row=1,column=0,padx=20,pady=(0,10))
 
@@ -904,6 +934,8 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=lambda: self._add_graph(valor, categoria=cbo_variable.get()),
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
             btn.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
@@ -921,6 +953,8 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=lambda: self._add_graph(valor, x=cbo_x.get(), y=cbo_y.get()),
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
             btn.grid(row=fila, column=3, pady=(10, 20), padx=(0, 20))
@@ -934,6 +968,8 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=lambda: self._add_graph(valor, va=cbo_var.get()),
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
             btn.grid(row=fila, column=2, pady=(10, 20), padx=(0, 20),sticky="w")
@@ -951,6 +987,8 @@ class App(ctk.CTk):
             btn = ctk.CTkButton(self.scroll_frame,
                                 text="G",
                                 width=50,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1,
                                 command=lambda: self._add_graph(valor,
                                                                 va=cbo_num.get(),
                                                                 categoria=cbo_cat.get()),
@@ -1055,6 +1093,8 @@ class App(ctk.CTk):
         print("Group checkbox de Transformar variables",group_check)
         btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                         text="Seleccionar",
+                                        border_color=self.color.COLOR_BORDE_WIDGET,
+                                        border_width=1,
                                         fg_color=self.color.COLOR_RELLENO_WIDGET,
                                         command=lambda:self.__save_columns(group_check,popup_choose_columns))
         btn_choose_columns.pack(anchor="center",pady=(5,10),padx=20)
@@ -1114,6 +1154,8 @@ class App(ctk.CTk):
             print("Group checkbox de Transformar variables",group_check)
             btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                             text="Seleccionar",
+                                            border_color=self.color.COLOR_BORDE_WIDGET,
+                                            border_width=1,
                                             command=lambda:self.__transfrom(group_check,
                                                                                function,
                                                                                math_functions,
@@ -1346,6 +1388,8 @@ class App(ctk.CTk):
             btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
+                                     border_color=self.color.COLOR_BORDE_WIDGET,
+                                     border_width=1,
                                      command=lambda: self.__guardar_url_excel(txt_file))
             btn_file.grid(row=0,column=2,padx=(0,20),pady=(20,10))
 
@@ -1363,6 +1407,8 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       border_color=self.color.COLOR_BORDE_WIDGET,
+                                       border_width=1,
                                        command=lambda:self.importar_from_excel(
                                             sheet_name=txt_sheet_name.get(),
                                             table_name=txt_table_name.get())
@@ -1382,6 +1428,8 @@ class App(ctk.CTk):
             btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
+                                     border_color=self.color.COLOR_BORDE_WIDGET,
+                                     border_width=1,
                                      command=lambda: self.__guardar_url_csv(txt_file))
             btn_file.grid(row=0,column=2,pady=(20,10),padx=(0,10))
             lbl_encoding = ctk.CTkLabel(self.form,text="encoding")
@@ -1401,6 +1449,8 @@ class App(ctk.CTk):
             
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       border_color=self.color.COLOR_BORDE_WIDGET,
+                                       border_width=1,
                                        command=lambda: self.importar_from_csv(
                                                                         encoding=txt_encoding.get(),
                                                                         sep=txt_sep.get(),
@@ -1448,6 +1498,8 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       border_color=self.color.COLOR_BORDE_WIDGET,
+                                       border_width=1,
                                        command=lambda: self.importar_from_bbdd(
                                            nombre_tabla = txt_nombre_tabla.get(),
                                            usuario_db=txt_user.get(),
@@ -1498,7 +1550,9 @@ class App(ctk.CTk):
         self.btn_elegir_columnas = ctk.CTkButton(header_hijo,
                                                  text="Elegir Columnas",
                                                  command=self.__select_columns,
-                                                 fg_color=self.color.COLOR_RELLENO_WIDGET
+                                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                                 border_color=self.color.COLOR_BORDE_WIDGET,
+                                                 border_width=1
                                                  )
         self.btn_elegir_columnas.grid(row=0,column=1,padx=(5,5),sticky="nsew",pady=(0,10))
 
@@ -1523,6 +1577,8 @@ class App(ctk.CTk):
 
         btn_generate_graph = ctk.CTkButton(header_hijo,
                                            text="Generar Gráfico",
+                                           border_color=self.color.COLOR_BORDE_WIDGET,
+                                           border_width=1,
                                            command=self._generate_graph,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_generate_graph.grid(row=0,column=3,padx=(5,5),sticky="nsew",pady=(0,10))
@@ -1548,6 +1604,8 @@ class App(ctk.CTk):
 
         btn_filtro = ctk.CTkButton(header_hijo,
                                    text="Filtrar",
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    command=self.__filtrar,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_filtro.grid(row=1,column=0,padx=(10,5),sticky="nsew")
@@ -1555,6 +1613,8 @@ class App(ctk.CTk):
 
         btn_convert_data_type = ctk.CTkButton(header_hijo,
                                               text="Convertir Tipo Datos",
+                                              border_color=self.color.COLOR_BORDE_WIDGET,
+                                              border_width=1,
                                               command=self.__convert_data_type,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_convert_data_type.grid(row=1,column=1,padx=(5,5),sticky="nsew")
@@ -1574,6 +1634,8 @@ class App(ctk.CTk):
         
         btn_calculate_statistics = ctk.CTkButton(header_hijo,
                                                  text="Estadísticas",
+                                                 border_color=self.color.COLOR_BORDE_WIDGET,
+                                                 border_width=1,
                                                  command= self.__calculate_statistics,
                                                  fg_color=self.color.COLOR_RELLENO_WIDGET
                                         )
@@ -1583,7 +1645,9 @@ class App(ctk.CTk):
         btn_aplicar = ctk.CTkButton(header_hijo,
                                     command=self.guardar_en_bbdd,
                                     text="Aplicar",
-                                    fg_color = self.color.COLOR_RELLENO_WIDGET
+                                    fg_color = self.color.COLOR_RELLENO_WIDGET,
+                                    border_color=self.color.COLOR_BORDE_WIDGET,
+                                    border_width=1
                                     )
         btn_aplicar.grid(row=1,column=4,padx=(5,10),sticky="nsew")
 
@@ -1605,7 +1669,6 @@ class App(ctk.CTk):
 
         self.tree = ttk.Treeview(frame_tabla,
                             xscrollcommand=scroll_x.set ,
-                           
                             show="headings")
         
         scroll_x.config(command=self.tree.xview)
@@ -1776,6 +1839,8 @@ class App(ctk.CTk):
         btn_entrenar = ctk.CTkButton(frame_btn,
                                      text="Entrenar",
                                      fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                     border_color=self.color.COLOR_BORDE_WIDGET,
+                                     border_width=1,
                                      command=lambda: self.train_model(
                                     type_search=cbo_type_search.get(),
                                    )
@@ -1791,6 +1856,8 @@ class App(ctk.CTk):
         self.frame_modelos.pack(fill="both",expand=True,side="top",pady=(10,20),padx=20)
         btn_historial = ctk.CTkButton(self.frame_modelos,
                                       text="Mostrar Estidisticos",
+                                      border_color=self.color.COLOR_BORDE_WIDGET,
+                                      border_width=1,
                                       command=self.mostrar_historial_estadisticas,
                                       fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_historial.grid(row=0,column=0,padx=10,pady=10,sticky="snew")
@@ -1814,12 +1881,14 @@ class App(ctk.CTk):
         header_hijo.grid_columnconfigure(3,weight=2,minsize=140)
 
         # Frame de imagen
-        frame_img = tk.LabelFrame(header_hijo, text="Opciones Imagen", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_img = ttk.LabelFrame(header_hijo, text="Opciones Imagen", style="TLabelframe")
         frame_img.grid(row=0, column=0, padx=(0, 5), sticky="nsew")
         frame_img.grid_columnconfigure(0, weight=1)
         frame_img.grid_columnconfigure(1, weight=1)
 
         btn_crear_imagen = ctk.CTkButton(frame_img, text="Nueva", command=self.crear_imagen,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_crear_imagen.grid(row=0, column=0, padx=5, pady=(5, 10), sticky="nsew")
         
@@ -1833,15 +1902,19 @@ class App(ctk.CTk):
         self.cbo_editar_imagen.grid(row=0, column=1, padx=5, pady=(5,10), sticky="nsew")
 
         btn_cambiar_imagen = ctk.CTkButton(frame_img, text="Cambiar", command=self.cambiar_imagen,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_cambiar_imagen.grid(row=1, column=0, padx=5, pady=(0, 10), sticky="nsew")
 
         btn_borrar_imagen = ctk.CTkButton(frame_img, text="Eliminar", command=self.eliminar_imagen,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_borrar_imagen.grid(row=1, column=1, padx=5, pady=(0, 10), sticky="nsew")
 
         # Frame de fuente
-        frame_fuente = tk.LabelFrame(header_hijo, text="Opciones Texto", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_fuente = ttk.LabelFrame(header_hijo, text="Opciones Texto", style="TLabelframe")
         frame_fuente.grid(row=0, column=1, padx=(0, 5), sticky="nsew")
         frame_fuente.grid_columnconfigure(0,weight=1)
         frame_fuente.grid_columnconfigure(1,weight=1)
@@ -1850,6 +1923,8 @@ class App(ctk.CTk):
         btn_crear_texto= ctk.CTkButton(frame_fuente, 
                                    text="Nuevo",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    command=self.crear_textbox)
         btn_crear_texto.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
         
@@ -1868,6 +1943,8 @@ class App(ctk.CTk):
         btn_borrar_texto= ctk.CTkButton(frame_fuente, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    command=self.eliminar_textbox)
         btn_borrar_texto.grid(row=0, column=2, padx=5, pady=(5,10), sticky="nsew")
 
@@ -1880,16 +1957,22 @@ class App(ctk.CTk):
 
         self.btn_negrita = ctk.CTkButton(fuente_subframe, text="N", font=("Arial", 12, "bold"), width=10,
                                     fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    border_color=self.color.COLOR_BORDE_WIDGET,
+                                    border_width=1,
                                     command=self.toggle_bold)
         self.btn_negrita.grid(padx=0, pady=0,row=1, column=0)
 
         self.btn_cursiva = ctk.CTkButton(fuente_subframe, text="C", font=("Arial", 12, "italic"), width=10,
                                     fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    border_color=self.color.COLOR_BORDE_WIDGET,
+                                    border_width=1,
                                     command=self.toggle_italic)
         self.btn_cursiva.grid(padx=0, pady=0,row=1, column=1)
 
         self.btn_subrayado = ctk.CTkButton(fuente_subframe, text="S", font=("Arial", 12, "underline"), width=10,
                                       fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                      border_color=self.color.COLOR_BORDE_WIDGET,
+                                      border_width=1,
                                       command=self.toggle_underline)
         self.btn_subrayado.grid(padx=0, pady=0,row=1, column=2)
 
@@ -1907,7 +1990,7 @@ class App(ctk.CTk):
         
 
         # Frame de configuración de gráfico
-        frame_configurar_grafico = tk.LabelFrame(header_hijo, text="Opciones Gráficos", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_configurar_grafico = ttk.LabelFrame(header_hijo, text="Opciones Gráficos", style="TLabelframe")
         frame_configurar_grafico.grid(row=0, column=2, padx=(0, 5),sticky="nsew")
         frame_configurar_grafico.grid_columnconfigure(0,weight=1)
         frame_configurar_grafico.grid_columnconfigure(1,weight=1)
@@ -1925,11 +2008,13 @@ class App(ctk.CTk):
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    command=self.eliminar_grafico)
         btn_borrar_grafico.pack(fill="x",expand=True, padx=5,pady=(0, 10))
 
         # Frame de impresión
-        frame_guardar = tk.LabelFrame(header_hijo, text="Opciones Hoja", relief="flat", background=self.color.COLOR_FONDO_FRAME)
+        frame_guardar = ttk.LabelFrame(header_hijo, text="Opciones Hoja", style="TLabelframe")
         frame_guardar.grid(row=0, column=3, padx=(0, 10), sticky="nsew")
         
         
@@ -1943,6 +2028,8 @@ class App(ctk.CTk):
         btn_add_txt= ctk.CTkButton(frame_guardar, 
                                    text="Guardar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                   border_color=self.color.COLOR_BORDE_WIDGET,
+                                   border_width=1,
                                    command=self.guardar_hoja_csv)
         btn_add_txt.pack(fill="x",expand=True, padx=5,pady=(0, 10))
         
@@ -2142,16 +2229,19 @@ class App(ctk.CTk):
         if tipo == "texto":
             self.cbo_editar_grafico.set("Elegir Gráfico")
             self.cbo_editar_imagen.set("Elegir Imagen")
+            self.cmb_color.configure(state="normal")
             self.clean_menu_editar(value)
             self.actualizar_sliders(tipo,value)
         elif tipo == "grafico":
             self.cbo_editar_texto.set("Elegir Texto")
             self.cbo_editar_imagen.set("Elegir Imagen")
+            self.cmb_color.configure(state="normal")
             self.actualizar_sliders(tipo,value)
 
         elif tipo == "imagen":
             self.cbo_editar_texto.set("Elegir Texto")
             self.cbo_editar_grafico.set("Elegir Gráfico")
+            self.cmb_color.configure(state="disabled")
             self.actualizar_sliders(tipo,value)
 
     def clean_menu_editar(self,value):
@@ -2742,11 +2832,15 @@ class App(ctk.CTk):
         ctk.CTkButton(popup_setting,
                       text="Cancelar",
                       fg_color = self.color.COLOR_RELLENO_WIDGET,
+                      border_color=self.color.COLOR_BORDE_WIDGET,
+                      border_width=1,
                       command=cerrar,
                       ).grid(row=3,column=0,padx=10,pady=10)
         ctk.CTkButton(popup_setting,
                       text="Aplicar",
                       fg_color = self.color.COLOR_RELLENO_WIDGET,
+                      border_color=self.color.COLOR_BORDE_WIDGET,
+                      border_width=1,
                       command=lambda:self.actualizar_interfaz(
                           cbo_color_fondo.get(),
                           cbo_set_table.get(),
@@ -2837,8 +2931,8 @@ class App(ctk.CTk):
             def cancelar():
                 nota_window.destroy()
 
-            btn_guardar = ctk.CTkButton(btn_frame, text="Guardar", command=guardar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET)
-            btn_cancelar = ctk.CTkButton(btn_frame, text="Cancelar", command=cancelar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET)
+            btn_guardar = ctk.CTkButton(btn_frame, text="Guardar", command=guardar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET,border_color=self.color.COLOR_BORDE_WIDGET,border_width=1)
+            btn_cancelar = ctk.CTkButton(btn_frame, text="Cancelar", command=cancelar, width=100, fg_color=self.color.COLOR_RELLENO_WIDGET,border_color=self.color.COLOR_BORDE_WIDGET,border_width=1)
             btn_guardar.grid(row=0, column=0, padx=5)
             btn_cancelar.grid(row=0, column=1, padx=5)
 
@@ -2854,6 +2948,8 @@ class App(ctk.CTk):
                                         text=f"Nota {indice}",
                                         width=55,
                                         fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                        border_color=self.color.COLOR_BORDE_WIDGET,
+                                        border_width=1,
                                         command=lambda i=indice: abrir_ventana_nota(i))
             nuevo_boton.grid(row=fila, column=columna, padx=10, pady=10)
             self.botones_nota.append(nuevo_boton)
@@ -2863,12 +2959,16 @@ class App(ctk.CTk):
 
         boton_agregar = ctk.CTkButton(popup_task, text="+", width=40, height=40,
                                     command=añadir_boton,
-                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    border_color=self.color.COLOR_BORDE_WIDGET,
+                                    border_width=1)
         boton_agregar.grid(row=5, column=1, pady=10, padx=10)
 
         boton_cerrar = ctk.CTkButton(popup_task, text="Cerrar", width=40, height=40,
                                     command=cerrar,
-                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    border_color=self.color.COLOR_BORDE_WIDGET,
+                                    border_width=1)
         boton_cerrar.grid(row=5, column=2, pady=10, padx=10)
 
         
@@ -3160,7 +3260,9 @@ class App(ctk.CTk):
 
         btn_info = ctk.CTkButton(self.frame_modelos, text=nombre_modelo,
                                 command=lambda: self.mostrar_info_modelo(nombre_modelo, info_texto),
-                                fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                border_color=self.color.COLOR_BORDE_WIDGET,
+                                border_width=1)
         btn_info.grid(row=fila,column=columna,padx=10,pady=10,sticky="snew")
         
         if append_list:
@@ -3255,7 +3357,7 @@ class App(ctk.CTk):
                         background=self.color.COLOR_FONDO_FRAME,     # fondo de las filas
                         foreground=self.color.COLOR_LETRA_NORMAL,        # color del texto
                         rowheight=30,               # altura de filas
-                        fieldbackground="#88001f",  # fondo cuando la tabla tiene focus
+                        fieldbackground=self.color.COLOR_FONDO_FRAME,  # fondo cuando la tabla tiene focus
                         bordercolor="#cccccc", 
                         borderwidth=1)
 
@@ -3275,9 +3377,25 @@ class App(ctk.CTk):
                 background=[("active", self.color.COLOR_RELLENO_COLUMNA_HOVER)],
                 foreground=[("active", self.color.COLOR_LETRA_BOTON)])
 
+
+    def __style_for_labelframe(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        style.configure("TLabelframe",
+                        background=self.color.COLOR_FONDO_FRAME,
+                        relief="solid",
+                        bordercolor=self.color.COLOR_BORDE_WIDGET, 
+                        borderwidth=1)
+
+        style.configure("TLabelframe.Label",
+                        background=self.color.COLOR_FONDO_FRAME,
+                        foreground=self.color.COLOR_LETRA_SOBRE_FONDO, 
+                        font=("Arial", 12, "normal"))
         
     def actualizar_colores_widgets(self):
         self.__style_for_tabla()
+        self.__style_for_labelframe()
         self.configure(fg_color=self.color.COLOR_FONDO_APP)
         self.menu.configure(fg_color = self.color.COLOR_FONDO_APP)
         self.notebook.configure(fg_color=self.color.COLOR_FONDO_APP,
@@ -3292,12 +3410,12 @@ class App(ctk.CTk):
                                             border_width=1)
                         
                         for sub_frame2 in sub_frame.winfo_children():
-                            if isinstance(sub_frame2, (ctk.CTkFrame, ttk.LabelFrame)):
+                            if isinstance(sub_frame2, ctk.CTkFrame):
                                 sub_frame2.configure(fg_color=self.color.COLOR_FONDO_FRAME,
                                                         )
                             
                             for sub_frame3 in sub_frame2.winfo_children():
-                                if isinstance(sub_frame3, (ctk.CTkFrame, ttk.LabelFrame)):
+                                if isinstance(sub_frame3, ctk.CTkFrame):
                                     sub_frame3.configure(fg_color=self.color.COLOR_FONDO_FRAME,
                                                         )
 
@@ -3355,8 +3473,10 @@ class App(ctk.CTk):
                                 elif isinstance(widget, ctk.CTkComboBox):
                                     widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
                                 elif isinstance(widget, ctk.CTkButton):
-                                    widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
-                                elif isinstance(widget, tk.LabelFrame):
+                                    widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                                     border_color=self.color.COLOR_BORDE_WIDGET,
+                                                     border_width=1)
+                                elif isinstance(widget, ttk.LabelFrame):
                                     widget.configure(background=self.color.COLOR_FONDO_FRAME)
 
         # Ajustes gráficos
@@ -3380,7 +3500,9 @@ class App(ctk.CTk):
             if isinstance(widget, ctk.CTkComboBox):
                 widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
             elif isinstance(widget, ctk.CTkButton):
-                widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
+                widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                 border_color=self.color.COLOR_BORDE_WIDGET,
+                                 border_width=1)
 
         # Actualizar hojas y sus frames
         for hoja_key, hoja in self.hojas.items():
@@ -3397,8 +3519,7 @@ class App(ctk.CTk):
             widget = self
 
         for child in widget.winfo_children():
-            if isinstance(child, tk.LabelFrame):
-                child.configure(background=self.color.COLOR_FONDO_FRAME)
+            if isinstance(child, ttk.LabelFrame):
                 for sub_frame in child.winfo_children():
                     if isinstance(sub_frame, ctk.CTkFrame):
                         sub_frame.configure(fg_color=self.color.COLOR_FONDO_FRAME)
