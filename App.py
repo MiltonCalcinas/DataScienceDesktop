@@ -274,7 +274,7 @@ class App(ctk.CTk):
                                 width=20,
                                 command=self.__form_task,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_task.grid(row=0,column=0,padx=(0,10))
+        btn_task.grid(row=0,column=0,padx=(0,10),pady=(10,0))
 
         img_setting = ctk.CTkImage(light_image=Image.open(r"iconos\ico_setting.png"),size=(20,20))
         btn_setting= ctk.CTkButton(self.menu,
@@ -283,7 +283,7 @@ class App(ctk.CTk):
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
                                 command=self.__form_setting)
-        btn_setting.grid(row=0,column=1,padx=(0,10))
+        btn_setting.grid(row=0,column=1,padx=(0,10),pady=(10,0))
 
         img_save = ctk.CTkImage(light_image=Image.open(r"iconos\ico_save.png"),size=(20,20))
         btn_save= ctk.CTkButton(self.menu,
@@ -292,7 +292,7 @@ class App(ctk.CTk):
                                 width=20,
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
                                 command=self.__save_all)
-        btn_save.grid(row=0,column=2,padx=(0,10))
+        btn_save.grid(row=0,column=2,padx=(0,10),pady=(10,0))
         
 
     def crear_notebook(self):
@@ -1185,22 +1185,19 @@ class App(ctk.CTk):
             messagebox.showerror("Campos Invalidos para la Transformación", "Por favor, completa todos los campos obligatorios.")
             return
         
-        if table_name in self.table_name_list:
+        self.table_name = table_name
+        if self.table_name in self.table_name_list:
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
         
-            
-
-
         try:
             print("--- Mostrando tabla csv")
             self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
             self.guardar_en_bbdd()
             print("--- añadiendo tabla_name---")
-            self.table_name_list.append(table_name)
+            self.table_name_list.append(self.table_name)
             print("---saving table name")
-            self.post_table_name(table_name)
-            self.table_name = table_name
+            self.post_table_name(self.table_name)
             self.show_tree_viewport()
         except Exception as ex:
             print("Error al importar CSV",ex)
@@ -1216,7 +1213,7 @@ class App(ctk.CTk):
             messagebox.showwarning("Campos requeridos", "Por favor, Seleciona el archivo Excel con los datos y establece la Hoja.")
             return
         
-        
+        self.table_name = table_name
         if table_name in self.table_name_list:
             messagebox.showerror("Tabla ya existe","Por favor, utilice otro nombre de tabla, esta tabla ya existe")
             return
@@ -1229,9 +1226,8 @@ class App(ctk.CTk):
         try:
             self.df = pd.read_excel(self.url_excel,sheet_name=sheet_name)
             print("--- post guardar nombre de tabla---")
-            self.table_name_list.append(table_name)
-            self.post_table_name(table_name)
-            self.table_name = table_name
+            self.table_name_list.append(self.table_name)
+            self.post_table_name(self.table_name)
             self.guardar_en_bbdd()
             self.show_tree_viewport()
             
@@ -1368,8 +1364,8 @@ class App(ctk.CTk):
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=lambda:self.importar_from_excel(
-                                            txt_sheet_name.get(),
-                                            txt_table_name.get())
+                                            sheet_name=txt_sheet_name.get(),
+                                            table_name=txt_table_name.get())
                                             )
             btn_enviar.grid(row=3,column=0,columnspan=2,pady=(10,20))
 
@@ -1406,9 +1402,9 @@ class App(ctk.CTk):
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
                                        command=lambda: self.importar_from_csv(
-                                                                        txt_encoding.get(),
-                                                                        txt_sep.get(),
-                                                                        txt_table_name.get())
+                                                                        encoding=txt_encoding.get(),
+                                                                        sep=txt_sep.get(),
+                                                                        table_name=txt_table_name.get())
                                                             )
             
             btn_enviar.grid(row=4,column=1,pady=(10,10),padx=(0,50))
@@ -1472,7 +1468,7 @@ class App(ctk.CTk):
                                     fg_color=self.color.COLOR_FONDO_FRAME,
                                     corner_radius=10,
                                     border_color=self.color.COLOR_BORDE_WIDGET,
-                                    border_width=2,
+                                    border_width=2
                                     )
         header_padre.pack(side="top",padx=20,pady=(20,10),fill="x")
         header_hijo = ctk.CTkFrame(header_padre,
@@ -1591,8 +1587,13 @@ class App(ctk.CTk):
                                     )
         btn_aplicar.grid(row=1,column=4,padx=(5,10),sticky="nsew")
 
-        frame_tabla = ctk.CTkFrame(self.tab1,height=400,fg_color=self.color.COLOR_FONDO_FRAME)
-        frame_tabla.pack(fill="x",side="top",pady=(10,20),padx=20)
+        frame_tabla = ctk.CTkFrame(
+            self.tab1,
+            fg_color=self.color.COLOR_FONDO_FRAME,
+            border_color=self.color.COLOR_BORDE_WIDGET,
+            border_width=2
+            )
+        frame_tabla.pack(fill="both",expand=True,side="top",pady=(10,20),padx=20)
         
         scroll_x = ttk.Scrollbar(frame_tabla,orient="horizontal")
         scroll_x.pack(side="bottom",fill="x")     
@@ -1781,10 +1782,13 @@ class App(ctk.CTk):
         )
         btn_entrenar.pack(fill="x",expand=True,side="left")
         
-        self.frame_modelos = ctk.CTkFrame(self.tab2,
-                                    height=400,
-                                    fg_color=self.color.COLOR_FONDO_FRAME)
-        self.frame_modelos.pack(fill="x",side="top",pady=(10,20),padx=20)
+        self.frame_modelos = ctk.CTkFrame(
+            self.tab2,
+            fg_color=self.color.COLOR_FONDO_FRAME,
+            border_color=self.color.COLOR_BORDE_WIDGET,
+            border_width=2
+        )
+        self.frame_modelos.pack(fill="both",expand=True,side="top",pady=(10,20),padx=20)
         btn_historial = ctk.CTkButton(self.frame_modelos,
                                       text="Mostrar Estidisticos",
                                       command=self.mostrar_historial_estadisticas,
@@ -1793,27 +1797,31 @@ class App(ctk.CTk):
 
     def crear_dashboard(self):
         # Frame principal
-        header_padre = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME, corner_radius=20)
-        header_padre.pack(fill="x")
+        header_padre = ctk.CTkFrame(self.tab3,fg_color=self.color.COLOR_FONDO_FRAME,corner_radius=10, border_width=2, border_color=self.color.COLOR_BORDE_WIDGET)
+        header_padre.pack(side="top",padx=20,pady=(20,10),fill="x")
 
         # Frame secundario
-        header_hijo = ctk.CTkFrame(header_padre, fg_color=self.color.COLOR_FONDO_FRAME, corner_radius=20)
-        header_hijo.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        header_hijo = ctk.CTkFrame(header_padre,fg_color=self.color.COLOR_FONDO_FRAME,corner_radius=10)
+        header_hijo.pack(fill="both",padx=10,pady=10)
 
         # Configurar la expansión de filas y columnas
         header_padre.grid_columnconfigure(0, weight=1)  # Expande la columna 0 de header_padre
 
         #header_hijo.grid_rowconfigure(0, weight=1)  # Expande la fila 0 de header_hijo
-        header_hijo.grid_columnconfigure(0, weight=3,minsize=250)  # Expande la columna 0 de header_hijo
-        header_hijo.grid_columnconfigure(1, weight=3,minsize=300)  # Expande la columna 1 de header_hijo
-        header_hijo.grid_columnconfigure(2,weight=2,minsize=150)
-        header_hijo.grid_columnconfigure(3,weight=2,minsize=150)
+        header_hijo.grid_columnconfigure(0, weight=3,minsize=210)  # Expande la columna 0 de header_hijo
+        header_hijo.grid_columnconfigure(1, weight=4,minsize=280)  # Expande la columna 1 de header_hijo
+        header_hijo.grid_columnconfigure(2,weight=2,minsize=140)
+        header_hijo.grid_columnconfigure(3,weight=2,minsize=140)
 
         # Frame de imagen
         frame_img = tk.LabelFrame(header_hijo, text="Opciones Imagen", relief="flat", background=self.color.COLOR_FONDO_FRAME)
         frame_img.grid(row=0, column=0, padx=(0, 5), sticky="nsew")
         frame_img.grid_columnconfigure(0, weight=1)
         frame_img.grid_columnconfigure(1, weight=1)
+
+        btn_crear_imagen = ctk.CTkButton(frame_img, text="Nueva", command=self.crear_imagen,
+                                   fg_color=self.color.COLOR_RELLENO_WIDGET)
+        btn_crear_imagen.grid(row=0, column=0, padx=5, pady=(5, 10), sticky="nsew")
         
         self.cbo_editar_imagen = ctk.CTkComboBox(frame_img,
                                           button_color=self.color.COLOR_RELLENO_WIDGET,
@@ -1822,11 +1830,7 @@ class App(ctk.CTk):
                                           command=lambda v: self.seleccionar_elemento("imagen", v)
                                           )
         self.cbo_editar_imagen.set("Elegir Imagen")
-        self.cbo_editar_imagen.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
-
-        btn_crear_imagen = ctk.CTkButton(frame_img, text="Cargar", command=self.crear_imagen,
-                                   fg_color=self.color.COLOR_RELLENO_WIDGET)
-        btn_crear_imagen.grid(row=0, column=1, padx=5, pady=(5, 10), sticky="nsew")
+        self.cbo_editar_imagen.grid(row=0, column=1, padx=5, pady=(5,10), sticky="nsew")
 
         btn_cambiar_imagen = ctk.CTkButton(frame_img, text="Cambiar", command=self.cambiar_imagen,
                                    fg_color=self.color.COLOR_RELLENO_WIDGET)
@@ -1916,13 +1920,13 @@ class App(ctk.CTk):
                                           command=lambda v: self.seleccionar_elemento("grafico", v)
                                           )
         self.cbo_editar_grafico.set("Elegir Grafico")
-        self.cbo_editar_grafico.grid(row=0, column=0, padx=5, pady=(5,10), sticky="nsew")
+        self.cbo_editar_grafico.pack(padx=5, pady=(5, 10), fill="x")
 
         btn_borrar_grafico= ctk.CTkButton(frame_configurar_grafico, 
                                    text="Eliminar",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    command=self.eliminar_grafico)
-        btn_borrar_grafico.grid(row=1, column=0, padx=5, pady=(5,10), sticky="nsew")
+        btn_borrar_grafico.pack(fill="x",expand=True, padx=5,pady=(0, 10))
 
         # Frame de impresión
         frame_guardar = tk.LabelFrame(header_hijo, text="Opciones Hoja", relief="flat", background=self.color.COLOR_FONDO_FRAME)
@@ -1943,16 +1947,21 @@ class App(ctk.CTk):
         btn_add_txt.pack(fill="x",expand=True, padx=5,pady=(0, 10))
         
          # Frame principal (panel)
-        panel = ctk.CTkFrame(self.tab3, fg_color=self.color.COLOR_FONDO_FRAME)
-        panel.pack(fill="both", expand=True, padx=10, pady=10)
+        panel = ctk.CTkFrame(
+            self.tab3, 
+            fg_color=self.color.COLOR_FONDO_FRAME, 
+            border_color=self.color.COLOR_BORDE_WIDGET,
+            border_width=2
+        )
+        panel.pack(fill="both",expand=True,side="top",pady=(10,20),padx=20)
 
-        # Tabview (dashboard) en el panel, 
-        self.dashboard = ctk.CTkTabview(panel,fg_color=self.color.COLOR_FONDO_FRAME)
-        self.dashboard.pack(side="left", fill="both", expand=True)
+        # Tabview dentro del frame (sin borde para que parezca parte del frame)
+        self.dashboard = ctk.CTkTabview(panel, fg_color="transparent", border_width=0)
+        self.dashboard.pack(side="left", fill="both", expand=True, padx=(5,0), pady=5)
 
         # Menú lateral (panel_graficos) a la derecha
         menu_lateral = ctk.CTkTabview(panel,fg_color=self.color.COLOR_FONDO_FRAME)
-        menu_lateral.pack(side="right", fill="y", padx=(10, 0), pady=10)
+        menu_lateral.pack(side="right", fill="y", padx=(0,5), pady=5)
 
         hoja_grafico = menu_lateral.add("Gráficos")
         hoja_formato = menu_lateral.add("Formato")
@@ -1964,7 +1973,7 @@ class App(ctk.CTk):
         panel_formato.pack(fill="both", expand=True)
 
         cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
-        cuadro_iconos.pack(pady=(0,20))
+        cuadro_iconos.pack(pady=(0,15))
 
         cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
         cuadro_variables.pack(fill="both",expand=True)
@@ -2026,7 +2035,7 @@ class App(ctk.CTk):
         lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x",text_color=self.color.COLOR_LETRA_BOTON)
         lbl_var_x.pack()
         self.cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
-        self.cbo_var_x.pack(pady=(0,10))
+        self.cbo_var_x.pack()
 
         # Agregar componentes de ajustes del gráfico
         self.ajustes_graficos = {}
@@ -2058,6 +2067,7 @@ class App(ctk.CTk):
                     "Cian", "Magenta", "Gris Claro", "Gris", "Gris Oscuro", "Naranja", 
                     "Rosado", "Lima", "Turquesa", "Violeta", "Lavanda", "Dorado", 
                     "Plateado", "Celeste", "Aguamarina", "Coral"],
+            button_color=self.color.COLOR_RELLENO_WIDGET,
             command=lambda valor: self.aplicar_formato(valor, "Relleno")
         )
         self.cmb_relleno.grid(row=len(ajustes_con_slider)+1, column=1)
@@ -2072,6 +2082,7 @@ class App(ctk.CTk):
                     "Magenta", "Gris Claro", "Gris", "Gris Oscuro", "Naranja", 
                     "Rosado", "Lima", "Turquesa", "Violeta", "Lavanda", "Dorado", 
                     "Plateado", "Celeste", "Aguamarina", "Coral"],
+            button_color=self.color.COLOR_RELLENO_WIDGET,
             command=lambda valor: self.aplicar_formato(valor, "Color")
         )
         self.cmb_color.grid(row=len(ajustes_con_slider)+2, column=1)
