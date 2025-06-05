@@ -1975,8 +1975,8 @@ class App(ctk.CTk):
         cuadro_iconos = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
         cuadro_iconos.pack(pady=(0,15))
 
-        cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_RELLENO_WIDGET)
-        cuadro_variables.pack(fill="both",expand=True)
+        self.cuadro_variables = ctk.CTkFrame(panel_graficos,fg_color=self.color.COLOR_FONDO_FRAME)
+        self.cuadro_variables.pack(fill="both",expand=True)
 
         # Agregar las hojas al dashboard y frames (contenido blanco)
         self.hojas = {}
@@ -2017,6 +2017,9 @@ class App(ctk.CTk):
                 text="",
                 image=my_ctk_images[i],
                 width=10, height=10,
+                fg_color=self.color.COLOR_RELLENO_WIDGET,
+                border_color=self.color.COLOR_BORDE_WIDGET,
+                border_width=1,
                 command=lambda t=tipo: self.crear_grafico(t)
             )
 
@@ -2028,13 +2031,13 @@ class App(ctk.CTk):
                 contador += 1
 
         #  Agregar seleccion de Variables
-        lbl_var_y = ctk.CTkLabel(cuadro_variables,text="Eje y",text_color=self.color.COLOR_LETRA_BOTON)
+        lbl_var_y = ctk.CTkLabel(self.cuadro_variables,text="Eje y",text_color=self.color.COLOR_LETRA_NORMAL)
         lbl_var_y.pack()
-        self.cbo_var_y = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
+        self.cbo_var_y = ctk.CTkComboBox(self.cuadro_variables,button_color=self.color.COLOR_RELLENO_WIDGET,values=["Col 1","Col 2"],state="readonly")
         self.cbo_var_y.pack()
-        lbl_var_x = ctk.CTkLabel(cuadro_variables,text="Eje x",text_color=self.color.COLOR_LETRA_BOTON)
+        lbl_var_x = ctk.CTkLabel(self.cuadro_variables,text="Eje x",text_color=self.color.COLOR_LETRA_NORMAL)
         lbl_var_x.pack()
-        self.cbo_var_x = ctk.CTkComboBox(cuadro_variables,values=["Col 1","Col 2"],state="readonly")
+        self.cbo_var_x = ctk.CTkComboBox(self.cuadro_variables,button_color=self.color.COLOR_RELLENO_WIDGET,values=["Col 1","Col 2"],state="readonly")
         self.cbo_var_x.pack()
 
         # Agregar componentes de ajustes del gráfico
@@ -2052,7 +2055,7 @@ class App(ctk.CTk):
             nombre = ajustes_con_slider[i]
 
             self.ajustes_graficos[f"lbl_{nombre}"] = ctk.CTkLabel(panel_formato, text=nombre)
-            self.ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0)
+            self.ajustes_graficos[f"lbl_{nombre}"].grid(row=i, column=0, pady=5)
 
             self.ajustes_graficos[f"sld_{nombre}"] = ctk.CTkSlider(panel_formato, from_=-100, to=100,
                                                             command=lambda valor, ajuste=nombre: self.aplicar_formato(valor, ajuste))
@@ -2060,7 +2063,7 @@ class App(ctk.CTk):
 
         # Relleno
         self.lbl_relleno = ctk.CTkLabel(panel_formato, text="Relleno",text_color=self.color.COLOR_LETRA_NEGRITA)
-        self.lbl_relleno.grid(row=len(ajustes_con_slider)+1, column=0)
+        self.lbl_relleno.grid(row=len(ajustes_con_slider)+1, column=0, pady=5)
 
         self.cmb_relleno = ctk.CTkComboBox(panel_formato,
             values=["Ninguno", "Negro", "Blanco", "Rojo", "Verde", "Azul", "Amarillo", 
@@ -2075,7 +2078,7 @@ class App(ctk.CTk):
 
         # Color
         self.lbl_color = ctk.CTkLabel(panel_formato, text="Color",text_color=self.color.COLOR_LETRA_NEGRITA)
-        self.lbl_color.grid(row=len(ajustes_con_slider)+2, column=0)
+        self.lbl_color.grid(row=len(ajustes_con_slider)+2, column=0, pady=5)
 
         self.cmb_color = ctk.CTkComboBox(panel_formato,
             values=["Negro", "Blanco", "Rojo", "Verde", "Azul", "Amarillo", "Cian", 
@@ -3340,9 +3343,15 @@ class App(ctk.CTk):
                             panel.configure(fg_color=self.color.COLOR_FONDO_FRAME)
                             for widget in panel.winfo_children():
                                 if isinstance(widget, ctk.CTkFrame):
-                                    widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
+                                    if widget == self.cuadro_variables:
+                                        widget.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+                                        if isinstance(widget, ctk.CTkLabel):
+                                            for label in widget.winfo_children():
+                                                widget.configure(text_color=self.color.COLOR_LETRA_NORMAL)
+                                    else:
+                                        widget.configure(fg_color=self.color.COLOR_RELLENO_WIDGET)
                                 elif isinstance(widget, ctk.CTkLabel):
-                                    widget.configure(text_color=self.color.COLOR_LETRA_BOTON)
+                                    widget.configure(text_color=self.color.COLOR_LETRA_NORMAL)
                                 elif isinstance(widget, ctk.CTkComboBox):
                                     widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
                                 elif isinstance(widget, ctk.CTkButton):
