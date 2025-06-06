@@ -1859,7 +1859,7 @@ class App(ctk.CTk):
         # Canvas contenedor
         self.canvas_scroll = tk.Canvas(
             self.frame_contenido,
-            background=self.color.COLOR_FONDO_APP,
+            background=self.color.COLOR_FONDO_FRAME,
             highlightthickness=0,
             borderwidth=0
         )
@@ -3454,7 +3454,7 @@ class App(ctk.CTk):
         style.configure("TLabelframe.Label",
                         background=self.color.COLOR_FONDO_FRAME,
                         foreground=self.color.COLOR_LETRA_SOBRE_FONDO, 
-                        font=("Roboto", 13, "normal"))
+                        font=("Roboto", 12, "normal"))
         
     def actualizar_colores_widgets(self):
         self.__style_for_tabla()
@@ -3466,7 +3466,7 @@ class App(ctk.CTk):
         
         # Actualizar canvas y frame_modelos
         if hasattr(self, "canvas_scroll"):
-            self.canvas_scroll.configure(background=self.color.COLOR_FONDO_APP)
+            self.canvas_scroll.configure(background=self.color.COLOR_FONDO_FRAME)
 
         if hasattr(self, "frame_modelos"):
             self.frame_modelos.configure(
