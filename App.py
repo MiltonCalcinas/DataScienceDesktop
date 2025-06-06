@@ -2917,7 +2917,7 @@ class App(ctk.CTk):
         popup_setting = ctk.CTkToplevel(self,
                                         fg_color=self.color.COLOR_FONDO_FRAME,
                                         )
-        
+        popup_setting.title("Ajustes")
                 #centrar ventana
         popup_setting.update()
         center_window(popup_setting)
