@@ -1847,20 +1847,79 @@ class App(ctk.CTk):
         )
         btn_entrenar.pack(fill="x",expand=True,side="left")
         
-        self.frame_modelos = ctk.CTkFrame(
+        # Canvas contenedor
+        self.frame_contenido = ctk.CTkFrame(
             self.tab2,
             fg_color=self.color.COLOR_FONDO_FRAME,
             border_color=self.color.COLOR_BORDE_WIDGET,
             border_width=2
         )
-        self.frame_modelos.pack(fill="both",expand=True,side="top",pady=(10,20),padx=20)
+        self.frame_contenido.pack(fill="both", expand=True, side="top", pady=(10, 20), padx=20)
+        
+        # Canvas contenedor
+        self.canvas_scroll = tk.Canvas(
+            self.frame_contenido,
+            background=self.color.COLOR_FONDO_APP,
+            highlightthickness=0,
+            borderwidth=0
+        )
+        self.canvas_scroll.pack(fill="both", expand=True, side="top", pady=5, padx=2)
+
+        self.frame_modelos = ctk.CTkFrame(
+            self.canvas_scroll,
+            fg_color=self.color.COLOR_FONDO_FRAME,
+            border_width=0,
+            corner_radius=0 
+        )
+
+        # Crear la ventana del frame dentro del canvas
+        self.frame_window = self.canvas_scroll.create_window((0, 0), window=self.frame_modelos, anchor="nw")
+        
         btn_historial = ctk.CTkButton(self.frame_modelos,
-                                      text="Mostrar Estidisticos",
+                                      text="Mostrar Estadisticos",
                                       border_color=self.color.COLOR_BORDE_WIDGET,
                                       border_width=1,
                                       command=self.mostrar_historial_estadisticas,
                                       fg_color=self.color.COLOR_RELLENO_WIDGET)
         btn_historial.grid(row=0,column=0,padx=10,pady=10,sticky="snew")
+
+        # Scrollbar horizontal
+        scrollbar_horizontal = ctk.CTkScrollbar(
+            master=self.frame_contenido,
+            orientation="horizontal",
+            button_color=self.color.COLOR_RELLENO_WIDGET,
+            command=self.canvas_scroll.xview
+        )
+        scrollbar_horizontal.pack(fill="x", side="bottom", padx=5, pady=(0,5))
+
+        self.canvas_scroll.configure(xscrollcommand=scrollbar_horizontal.set)
+
+        self.frame_modelos.bind("<Configure>", self.ajustar_scroll)
+        self.canvas_scroll.bind("<Configure>", self.ajustar_scroll)
+        self.tab2.bind("<Configure>", self.ajustar_scroll)
+        
+    def ajustar_scroll(self,event=None):
+        self.canvas_scroll.update_idletasks()
+
+        # Obtener tamaños actuales
+        canvas_width = self.canvas_scroll.winfo_width()
+        canvas_height = self.canvas_scroll.winfo_height()
+        frame_width = self.frame_modelos.winfo_reqwidth()
+        frame_height = self.frame_modelos.winfo_reqheight()
+
+        # Ajustar la ventana dentro del canvas para que tenga el tamaño requerido por el frame,
+        # pero al menos el tamaño del canvas para evitar dejar huecos.
+        new_width = max(canvas_width, frame_width)
+        new_height = max(canvas_height, frame_height)
+
+        self.canvas_scroll.itemconfig(self.frame_window, width=new_width, height=new_height)
+
+        # Actualizar scrollregion
+        self.canvas_scroll.configure(scrollregion=self.canvas_scroll.bbox("all"))
+
+    def actualizar_scrollregion(self):
+        self.canvas_scroll.update_idletasks()
+        self.canvas_scroll.configure(scrollregion=self.canvas_scroll.bbox("all"))
 
     def crear_dashboard(self):
         # Frame principal
@@ -3269,6 +3328,10 @@ class App(ctk.CTk):
             self.model_info_list.append(info_texto)
         self.modelo_count += 1
 
+        # Actualizar scrollregion para que scrollbar detecte nuevo tamaño
+        self.actualizar_scrollregion()
+        self.ajustar_scroll()
+
     def mostrar_info_modelo(self, nombre, info):
         ventana = ctk.CTkToplevel(self,fg_color=self.color.COLOR_FONDO_FRAME)
         ventana.title(nombre)
@@ -3391,7 +3454,7 @@ class App(ctk.CTk):
         style.configure("TLabelframe.Label",
                         background=self.color.COLOR_FONDO_FRAME,
                         foreground=self.color.COLOR_LETRA_SOBRE_FONDO, 
-                        font=("Arial", 12, "normal"))
+                        font=("Roboto", 13, "normal"))
         
     def actualizar_colores_widgets(self):
         self.__style_for_tabla()
@@ -3400,6 +3463,18 @@ class App(ctk.CTk):
         self.menu.configure(fg_color = self.color.COLOR_FONDO_APP)
         self.notebook.configure(fg_color=self.color.COLOR_FONDO_APP,
                                 border_color=self.color.COLOR_BORDE_WIDGET)
+        
+        # Actualizar canvas y frame_modelos
+        if hasattr(self, "canvas_scroll"):
+            self.canvas_scroll.configure(background=self.color.COLOR_FONDO_APP)
+
+        if hasattr(self, "frame_modelos"):
+            self.frame_modelos.configure(
+                fg_color=self.color.COLOR_FONDO_FRAME,
+                border_width=0,
+                corner_radius=0 
+            )
+        
         for frame in self.notebook.winfo_children():
             if isinstance(frame, ctk.CTkFrame):
                 frame.configure(fg_color=self.color.COLOR_FONDO_APP)
@@ -3410,15 +3485,16 @@ class App(ctk.CTk):
                                             border_width=1)
                         
                         for sub_frame2 in sub_frame.winfo_children():
-                            if isinstance(sub_frame2, ctk.CTkFrame):
-                                sub_frame2.configure(fg_color=self.color.COLOR_FONDO_FRAME,
-                                                        )
-                            
+                            if isinstance(sub_frame2, (ctk.CTkFrame, ttk.LabelFrame)):
+                                if isinstance(sub_frame2, ctk.CTkFrame):
+                                    sub_frame2.configure(fg_color=self.color.COLOR_FONDO_FRAME,
+                                                        bg_color=self.color.COLOR_FONDO_FRAME,)
+                                
                             for sub_frame3 in sub_frame2.winfo_children():
-                                if isinstance(sub_frame3, ctk.CTkFrame):
-                                    sub_frame3.configure(fg_color=self.color.COLOR_FONDO_FRAME,
-                                                        )
-
+                                if isinstance(sub_frame3, (ctk.CTkFrame, ttk.LabelFrame)):
+                                    if isinstance(sub_frame3, ctk.CTkFrame):
+                                        sub_frame3.configure(fg_color=self.color.COLOR_FONDO_FRAME,
+                                                            bg_color=self.color.COLOR_FONDO_FRAME,)
 
         def aplicar_color(widget):
             if isinstance(widget, ctk.CTkButton):
@@ -3432,6 +3508,9 @@ class App(ctk.CTk):
                                  border_color=self.color.COLOR_BORDE_WIDGET,
                                  border_width=1
                                  )
+
+            elif isinstance(widget, ctk.CTkScrollbar):
+                widget.configure(button_color=self.color.COLOR_RELLENO_WIDGET)
 
             # Recorremos recursivamente los hijos
             try:
@@ -3519,12 +3598,40 @@ class App(ctk.CTk):
             widget = self
 
         for child in widget.winfo_children():
+        # Si es un LabelFrame clásico, aplica fondo
             if isinstance(child, ttk.LabelFrame):
-                for sub_frame in child.winfo_children():
-                    if isinstance(sub_frame, ctk.CTkFrame):
-                        sub_frame.configure(fg_color=self.color.COLOR_FONDO_FRAME)
+                try:
+                    child.configure(background=self.color.COLOR_FONDO_FRAME)
+                except Exception:
+                    pass
+
+                # Aplica el fondo a sus contenidos también
+                self._aplicar_fondo_a_contenido(child, self.color.COLOR_FONDO_FRAME)
+
+            # Recurre sobre todos los hijos
             self.actualizar_fondos_labelframe(child)
 
+
+    def _aplicar_fondo_a_contenido(self, widget, color):
+        """
+        Aplica el color de fondo a todos los widgets dentro del LabelFrame o Frame
+        de forma recursiva, si es posible.
+        """
+        for subwidget in widget.winfo_children():
+            try:
+                if isinstance(subwidget, ctk.CTkFrame):
+                    subwidget.configure(fg_color=color, bg_color=color)
+                elif isinstance(subwidget, ctk.CTkLabel):
+                    subwidget.configure(bg_color=color)
+                elif isinstance(subwidget, ctk.CTkComboBox):
+                    subwidget.configure(bg_color=color)
+                elif isinstance(subwidget, ctk.CTkButton):
+                    subwidget.configure(bg_color=color)
+            except Exception:
+                pass  # No todos los widgets aceptan bg_color
+
+            # Recorre hijos recursivamente
+            self._aplicar_fondo_a_contenido(subwidget, color)
 
     def __save_all(self):
         url = config.VIEW_GUARDAR_CONTENIDO
