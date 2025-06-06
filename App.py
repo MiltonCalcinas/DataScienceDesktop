@@ -527,10 +527,15 @@ class App(ctk.CTk):
 
         columnas = list(self.df.head(10).select_dtypes(include="number").columns)
         selected_cols = []
+        
+        # Crear un marco desplazable
+        scroll_frame = ctk.CTkScrollableFrame(top, width=300, height=200)
+        scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+        scroll_frame.pack(pady=5)
 
         for col in columnas:
             var = ctk.BooleanVar()
-            chk = ctk.CTkCheckBox(top, text=col, variable=var,text_color=self.color.COLOR_LETRA_NORMAL)
+            chk = ctk.CTkCheckBox(scroll_frame, text=col, variable=var,text_color=self.color.COLOR_LETRA_NORMAL)
             chk.pack(anchor="w", padx=10,pady=10)
             selected_cols.append((col, var))
 
