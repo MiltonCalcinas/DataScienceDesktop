@@ -535,7 +535,7 @@ class App(ctk.CTk):
 
         for col in columnas:
             var = ctk.BooleanVar()
-            chk = ctk.CTkCheckBox(scroll_frame, text=col, variable=var,text_color=self.color.COLOR_LETRA_NORMAL)
+            chk = ctk.CTkCheckBox(scroll_frame, text=col, variable=var, fg_color=self.color.COLOR_RELLENO_WIDGET, border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
             chk.pack(anchor="w", padx=10,pady=10)
             selected_cols.append((col, var))
 
@@ -629,7 +629,7 @@ class App(ctk.CTk):
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         variable_column.grid(row=0, column=1, padx=(0, 20), pady=(20, 20))
 
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", fg_color=self.color.COLOR_RELLENO_WIDGET, border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
         chk_column.grid(row=0, column=2, padx=(0, 20), pady=(20, 20))
         
         # Guardar los widgets en una lista
@@ -661,7 +661,7 @@ class App(ctk.CTk):
         variable_conversion.grid(row=fila, column=0, padx=(20, 20), pady=(0, 20))
         variable_column = ctk.CTkComboBox(self.scroll_frame, values=list(self.df.columns),button_color=self.color.COLOR_RELLENO_WIDGET)
         variable_column.grid(row=fila, column=1, padx=(0, 20), pady=(0, 20))
-        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
+        chk_column = ctk.CTkCheckBox(self.scroll_frame, text="Misma columna", fg_color=self.color.COLOR_RELLENO_WIDGET, border_color=self.color.COLOR_BORDE_WIDGET, text_color=self.color.COLOR_LETRA_SOBRE_FONDO)
         chk_column.grid(row=fila, column=2, padx=(0, 20), pady=(0, 20))
 
         # Guardar los widgets en una lista
@@ -1089,6 +1089,7 @@ class App(ctk.CTk):
                                 scroll_frame,
                                 text=col,
                                 variable=var,
+                                border_color=self.color.COLOR_BORDE_WIDGET, 
                                 fg_color=self.color.COLOR_RELLENO_WIDGET,
                                 text_color=self.color.COLOR_LETRA_SOBRE_FONDO
                                 )
@@ -1098,9 +1099,9 @@ class App(ctk.CTk):
         print("Group checkbox de Transformar variables",group_check)
         btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                         text="Seleccionar",
+                                        fg_color=self.color.COLOR_RELLENO_WIDGET,
                                         border_color=self.color.COLOR_BORDE_WIDGET,
                                         border_width=1,
-                                        fg_color=self.color.COLOR_RELLENO_WIDGET,
                                         command=lambda:self.__save_columns(group_check,popup_choose_columns))
         btn_choose_columns.pack(anchor="center",pady=(5,10),padx=20)
 
@@ -1142,6 +1143,11 @@ class App(ctk.CTk):
             popup_choose_columns.lift()
             popup_choose_columns.grab_set()
 
+            # Crear un marco desplazable
+            scroll_frame = ctk.CTkScrollableFrame(popup_choose_columns, width=200, height=300)
+            scroll_frame.configure(fg_color=self.color.COLOR_FONDO_APP)
+            scroll_frame.pack(pady=5)
+
             group_check = {}
             columns_number = self.df.head().select_dtypes(include='number').columns.to_list()
             columns_object = self.df.head().select_dtypes(include='object').columns.to_list()
@@ -1149,9 +1155,12 @@ class App(ctk.CTk):
             for i,col in enumerate(columns_show):
                 var = ctk.BooleanVar()
                 chk = ctk.CTkCheckBox(
-                                    popup_choose_columns,
+                                    scroll_frame,
                                     text=col,
-                                    variable=var
+                                    variable=var,
+                                    border_color=self.color.COLOR_BORDE_WIDGET, 
+                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
+                                    text_color=self.color.COLOR_LETRA_SOBRE_FONDO
                                     )
                 chk.pack(anchor="w",pady=5,padx=20)
                 group_check[col] = var
@@ -1159,13 +1168,14 @@ class App(ctk.CTk):
             print("Group checkbox de Transformar variables",group_check)
             btn_choose_columns= ctk.CTkButton(popup_choose_columns,
                                             text="Seleccionar",
+                                            fg_color=self.color.COLOR_RELLENO_WIDGET,
                                             border_color=self.color.COLOR_BORDE_WIDGET,
                                             border_width=1,
                                             command=lambda:self.__transfrom(group_check,
                                                                                function,
                                                                                math_functions,
                                                                                popup_choose_columns))
-            btn_choose_columns.pack(anchor="w",pady=5,padx=20)
+            btn_choose_columns.pack(anchor="center",pady=(5,10),padx=20)
 
     def __transfrom(self,group_check,function,math_functions,popup_choose_columns):
         try:
@@ -1393,6 +1403,7 @@ class App(ctk.CTk):
             btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
+                                     fg_color=self.color.COLOR_RELLENO_WIDGET,
                                      border_color=self.color.COLOR_BORDE_WIDGET,
                                      border_width=1,
                                      command=lambda: self.__guardar_url_excel(txt_file))
@@ -1412,6 +1423,7 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       fg_color=self.color.COLOR_RELLENO_WIDGET,
                                        border_color=self.color.COLOR_BORDE_WIDGET,
                                        border_width=1,
                                        command=lambda:self.importar_from_excel(
@@ -1433,6 +1445,7 @@ class App(ctk.CTk):
             btn_file = ctk.CTkButton(self.form,
                                      text="⬅",
                                      width=20,
+                                     fg_color=self.color.COLOR_RELLENO_WIDGET,
                                      border_color=self.color.COLOR_BORDE_WIDGET,
                                      border_width=1,
                                      command=lambda: self.__guardar_url_csv(txt_file))
@@ -1454,6 +1467,7 @@ class App(ctk.CTk):
             
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       fg_color=self.color.COLOR_RELLENO_WIDGET,
                                        border_color=self.color.COLOR_BORDE_WIDGET,
                                        border_width=1,
                                        command=lambda: self.importar_from_csv(
@@ -1503,6 +1517,7 @@ class App(ctk.CTk):
 
             btn_enviar = ctk.CTkButton(self.form,
                                        text="Enviar",
+                                       fg_color=self.color.COLOR_RELLENO_WIDGET,
                                        border_color=self.color.COLOR_BORDE_WIDGET,
                                        border_width=1,
                                        command=lambda: self.importar_from_bbdd(
