@@ -31,6 +31,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
+from scipy.stats import gaussian_kde
 import tkinter.font as tkFont
 import csv
 import colorsys 
@@ -2313,13 +2314,15 @@ class App(ctk.CTk):
 
         # Control básico si no se seleccionan variables
         
-        if (var_y =='' or var_x =='') and tipo_grafico in ['Barra','Linea','Dispersión','Bigote por categoría']:
+        if (var_y =='' or var_x =='') and tipo_grafico in ['Linea','Dispersión','Bigote por categoría']:
             messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita de los 2 ejes.")
             return
-        elif  var_y =='' and tipo_grafico == "Tarta":
+        
+        if  var_y =='' and tipo_grafico in ["Tarta","Histograma","Bigote",'Densidad','Barra',]:
             messagebox.showerror("Error", f"Grafica {tipo_grafico} necesita Eje Y.")
             return
-        elif  var_x in self.df.columns.to_list() and (tipo_grafico == "Tarta" or tipo_grafico == 'Bigote'):
+        
+        if  var_x in self.df.columns.to_list() and (tipo_grafico in ["Tarta", "Histograma",'Bigote','Densidad']):
             messagebox.showerror("Error", f"Grafica {tipo_grafico} No usa El Eje X.")
             return
         else:
@@ -2327,18 +2330,42 @@ class App(ctk.CTk):
             ax.set_facecolor('none')
             fig.patch.set_facecolor('none')
             try:
-                if tipo_grafico == "Barra":
+                if tipo_grafico == "Barra" and var_x:
+                    if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                        messagebox.showerror(
+                        "Error",
+                        f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                        return
                     # Ejemplo: barras de la variable Y agrupadas por X
                     grouped = self.df.groupby(var_x)[var_y].mean()
-                    grouped.plot(kind='bar', ax=ax)
-                    ax.set_title("Gráfico de Barras")
+                    grouped.plot(kind='bar', ax=ax,color='lightgray', edgecolor='black', alpha=0.7)
+                    ax.set_title(f"Dist. Media de {var_y}")
+                    ax.set_xlabel(str(var_x))
+                    ax.set_ylabel(f"Media de {var_y}")
+                elif tipo_grafico == 'Barra' and  (var_x == ""):
+                    
+                    if  not isinstance(self.df[var_y].dtype, pd.CategoricalDtype) :
+                        messagebox.showerror(
+                        "Error",
+                        f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                        return
+                    counts = self.df.groupby(var_y).size()
+                    counts.plot(kind='bar', ax=ax, color='lightgray', edgecolor='black', alpha=0.7)
+                    ax.set_title(f'Dist. {var_y}')
                 elif tipo_grafico == "Tarta":
                     # Pie con distribución de variable X
+                    if not isinstance(self.df[var_y].dtype,pd.CategoricalDtype):
+                        messagebox.showerror(
+                        "Error",
+                        f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                        return
                     counts = self.df[var_y].value_counts()
                     ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
                     ax.set_title("Gráfico de Tarta")
                 elif tipo_grafico == "Linea":
-                    ax.plot(self.df[var_x], self.df[var_y])
+                    ordenado = self.df[[var_x,var_y]]
+                    ordenado.sort_values(by=var_x,ascending=True,inplace=True)
+                    ax.plot(ordenado[var_x], ordenado[var_y])
                     ax.set_title("Gráfico de Línea")
                 elif tipo_grafico == "Dispersión":
                     ax.scatter(self.df[var_x], self.df[var_y])
@@ -2347,10 +2374,31 @@ class App(ctk.CTk):
                     ax.boxplot(self.df[var_y].dropna())
                     ax.set_title("Gráfico de Caja (Bigote)")
                 elif tipo_grafico == "Bigote por categoría":
+                    if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                        messagebox.showerror(
+                        "Error",
+                        f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                        return
                     categories = self.df[var_x].unique()
                     data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
                     ax.boxplot(data, labels=categories)
-                    ax.set_title("Bigote por Categoría")
+                    ax.set_title(f"Dist. {var_y} por {var_x}")
+                elif tipo_grafico == 'Histograma':
+                    ax.hist(self.df[var_y], bins='auto',color='lightgray', edgecolor='black', alpha=0.7, label=f"Hist {var_y}")
+                    ax.set_title(f"Dist. Freq. {var_y}")
+                elif tipo_grafico == 'Densidad':
+                    data = self.df[var_y]
+                    density = gaussian_kde(data)
+                    x = np.linspace(min(data), max(data), data.size)
+                    y = density(x)
+                    ax.hist(data, bins='auto', density=True, color='lightgray', edgecolor='black', alpha=0.7, label="Hist")
+                    ax.plot(x, y, color='red', label="Densidad KDE")
+
+                    ax.set_title(f"Dist. Prob. {var_y}")
+                    ax.set_xlabel(var_y)
+                    ax.set_ylabel("Densidad")
+                    ax.legend()
+                    ax.grid(True)
             except Exception as e:
                 messagebox.showerror("Error",f"Error:\n{str(e)}")
                 return
