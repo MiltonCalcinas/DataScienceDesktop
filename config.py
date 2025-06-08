@@ -11,6 +11,10 @@ VIEW_GRAFICOS ="http://127.0.0.1:8000/api/graficos/"
 VIEW_GUARDAR_TEXTBOX = "http://127.0.0.1:8000/api/guardar_textbox/"
 VIEW_OBTENER_TEXTBOXES = "http://127.0.0.1:8000/api/obtener_textboxes/"
 VIEW_ELIMINAR_TEXTBOX =  "http://127.0.0.1:8000/eliminar_textbox/"
+VIEW_GUARDAR_GRAFICO = 'http://127.0.0.1:8000/guardar_grafico/'
+VIEW_OBTENER_GRAFICO =  "http://127.0.0.1:8000/obtener_graficos/"
+VIEW_ELIMINAR_GRAFICO = "http://127.0.0.1:8000/eliminar_grafico/"
+
 #VIEW_CARGAR_DATOS =  "http://localhost:8000/cargar_datos/"
 #VIEW_FILTRAR = "http://localhost:8000/filtrar/"
 

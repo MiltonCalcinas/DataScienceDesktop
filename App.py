@@ -38,6 +38,15 @@ from tkinter import font
 import csv
 import colorsys 
 
+def rgba_to_hex(rgba):
+    r, g, b, a = rgba
+    return "#{:02X}{:02X}{:02X}{:02X}".format(
+        int(r * 255),
+        int(g * 255),
+        int(b * 255),
+        int(a * 255)
+    )
+
 def sesion_guardada():
     print("---Verificndo auth_token---")
     if os.path.exists("session.json"):
@@ -115,7 +124,7 @@ class App(ctk.CTk):
         self.graph_widgets = {}
         self.table_name_list = []
         self.ruta_imagenes = []
-        self.tipo_grafico ={}
+        self.propiedades_grafico = {}
         self.load_font_system() 
         self.crear_interfaz()
         
@@ -2415,6 +2424,7 @@ class App(ctk.CTk):
             fig, ax = plt.subplots()
             ax.set_facecolor('none')
             fig.patch.set_facecolor('none')
+            propiedad_grafico = None
             try:
                 if tipo_grafico == "Barra" and var_x:
                     if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
@@ -2428,7 +2438,7 @@ class App(ctk.CTk):
                     ax.set_title(f"Dist. Media de {var_y}")
                     ax.set_xlabel(str(var_x))
                     ax.set_ylabel(f"Media de {var_y}")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
+                    propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == 'Barra' and  (var_x == ""):
                     
                     if  not isinstance(self.df[var_y].dtype, pd.CategoricalDtype) :
@@ -2439,7 +2449,7 @@ class App(ctk.CTk):
                     counts = self.df.groupby(var_y).size()
                     counts.plot(kind='bar', ax=ax, color='lightgray', edgecolor='black', alpha=0.7)
                     ax.set_title(f'Dist. {var_y}')
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+                    propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Tarta":
                     # Pie con distribución de variable X
                     if not isinstance(self.df[var_y].dtype,pd.CategoricalDtype):
@@ -2450,21 +2460,21 @@ class App(ctk.CTk):
                     counts = self.df[var_y].value_counts()
                     ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
                     ax.set_title("Gráfico de Tarta")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+                    propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Linea":
                     ordenado = self.df[[var_x,var_y]]
                     ordenado.sort_values(by=var_x,ascending=True,inplace=True)
                     ax.plot(ordenado[var_x], ordenado[var_y])
                     ax.set_title("Gráfico de Línea")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
+                    propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Dispersión":
                     ax.scatter(self.df[var_x], self.df[var_y])
                     ax.set_title("Gráfico de Dispersión")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
+                    propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Bigote":
                     ax.boxplot(self.df[var_y].dropna())
                     ax.set_title("Gráfico de Caja (Bigote)")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+                    propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Bigote por categoría":
                     if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
                         messagebox.showerror(
@@ -2475,11 +2485,11 @@ class App(ctk.CTk):
                     data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
                     ax.boxplot(data, labels=categories)
                     ax.set_title(f"Dist. {var_y} por {var_x}")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
+                    propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == 'Histograma':
                     ax.hist(self.df[var_y], bins='auto',color='lightgray', edgecolor='black', alpha=0.7, label=f"Hist {var_y}")
                     ax.set_title(f"Dist. Freq. {var_y}")
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+                    propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == 'Densidad':
                     data = self.df[var_y]
                     density = gaussian_kde(data)
@@ -2493,7 +2503,7 @@ class App(ctk.CTk):
                     ax.set_ylabel("Densidad")
                     ax.legend()
                     ax.grid(True)
-                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+                    propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
 
             except Exception as e:
                 messagebox.showerror("Error",f"Error:\n{str(e)}")
@@ -2503,6 +2513,7 @@ class App(ctk.CTk):
         
 
         nombre  =f"Gráfico {self.num_grafico}"
+        self.propiedades_grafico[nombre] = propiedad_grafico 
         frame_movil = MovableResizableFrame(hojas_frame_,300,300)
         frame_movil.figure = fig
         self.frames_movil_graficos[nombre]=frame_movil
@@ -2522,7 +2533,7 @@ class App(ctk.CTk):
             frame = self.frames_movil_graficos[name_grafico]
             frame.destroy()  # Elimina el contenedor del gráfico
             del self.frames_movil_graficos[name_grafico]  # Borra del diccionario
-
+            self.eliminar_grafico_bd(name_grafico)
             # Actualiza el combobox para remover el nombre eliminado
             values = list(self.cbo_editar_grafico.cget("values"))
             if name_grafico in values:
@@ -2826,7 +2837,7 @@ class App(ctk.CTk):
         elif ajuste == "Relleno":
             color_nombre = valor.strip().lower()
             hex_color = self.nombre_a_hex(color_nombre)
-
+            
             # Aplica el color al frame    
             if tipo == "grafico":
                 try:
@@ -2839,6 +2850,8 @@ class App(ctk.CTk):
                             fig.canvas.draw()
                             fig.canvas.get_tk_widget().update()
                             print(f"[INFO] Fondo del gráfico '{seleccionado}' cambiado a {hex_color}")
+                            self.propiedades_grafico[seleccionado]['relleno'] = hex_color
+                            print("Propiedad de Relleno para gráfico")
                         else:
                             print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
                     else:
@@ -2861,7 +2874,7 @@ class App(ctk.CTk):
         elif ajuste == "Color":
             color_nombre = valor.strip().lower()
             hex_color = self.nombre_a_hex(color_nombre)
-
+            
             # Aplicar el color según el tipo
             if tipo == "texto":
                 try:
@@ -2893,6 +2906,8 @@ class App(ctk.CTk):
                             fig.canvas.draw()
                             fig.canvas.get_tk_widget().update()
                             print(f"[INFO] Color del gráfico '{seleccionado}' actualizado a {hex_color}")
+                            self.propiedades_grafico[seleccionado]['color'] = hex_color
+                            print("propieded color par gráfico",self.propiedades_grafico[seleccionado]['color'])
                         else:
                             print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
                     else:
@@ -3797,9 +3812,9 @@ class App(ctk.CTk):
 
                 print("Notas:", data.get("notas"))
                 print("Estadísticas:", data.get("estadisticas"))
-                print("Modelos:", data.get("modelos"))
+                print("Modelos:","correcto")# data.get("modelos"))
 
-                print("que tengo self.model_info_list:",self.model_info_list)
+                #print("que tengo self.model_info_list:",self.model_info_list)
                 for i in range(len(self.model_info_list)):
                     nombre_modelo = self.model_info_list[i].split("\n")[0].strip()[8:]
                     self.agregar_btn_modelo_entrenado(f'Modelo {self.contador_modelos}:{nombre_modelo}',self.model_info_list[i],
@@ -3827,6 +3842,190 @@ class App(ctk.CTk):
 
     def enviar_datos_dashboard(self):
         print("--- enviar_datos_dashboard")
+        self.enviar_textbox()
+        self.enviar_graficos()
+
+    def try_load_datos_dashboard(self):
+        self.try_load_text_box()
+        self.try_load_graficos()
+
+    def enviar_graficos(self):
+        #hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
+        for nombre in self.frames_movil_graficos:
+            frame = self.frames_movil_graficos.get(nombre)
+            cotenedor_pestana = f"hoja{1}_frame"
+            print(f"self.propiedades_grafico[{nombre}]",self.propiedades_grafico[nombre])
+            
+            fig = frame.figure
+            ax = fig.axes[0]  # asumiendo que hay al menos un eje
+            color_relleno = fig.get_facecolor()  # fondo general del figure
+            color_texto = ax.title.get_color()     # color del titulo
+
+            datos = {
+                'table_name' : self.table_name,
+                "contenedor_nombre":nombre,
+                "contenedor_pestana": cotenedor_pestana,
+                "contenedor_x": frame.winfo_x(),
+                "contenedor_y": frame.winfo_y(),
+                "contenedor_ancho": frame.winfo_width(),
+                "contenedor_alto": frame.winfo_height(),
+                'borde_redondeado': frame.cget('corner_radius'),
+                "tipo_grafico": self.propiedades_grafico[nombre].get('tipo_grafico'),
+                'var_x':self.propiedades_grafico[nombre].get('var_x',None),
+                'var_y':self.propiedades_grafico[nombre].get('var_y'),
+                "color_relleno": rgba_to_hex(color_relleno),
+                'color_texto': color_texto ,
+        
+            }
+
+            print(f"[INFO] Datos enviados para {nombre}:", datos)
+
+            headers = {
+                "Authorization": f"Token {self.auth_token}",  # tu token aquí
+                "Content-Type": "application/json"
+            }
+
+            res = requests.post(
+                config.VIEW_GUARDAR_GRAFICO,
+                json=datos,
+                headers=headers
+            )
+            if res.ok:
+                print(f"✅ ¡{nombre} guardado correctamente!")
+            else:
+                print(f"❌ Error al guardar: {res.status_code} - {res.text}")
+
+
+    def try_load_graficos(self):
+        try:
+            headers = {
+                "Authorization": f"Token {self.auth_token}"
+            }
+            params = {
+                "table_name": self.table_name,
+            }
+
+            res = requests.get(config.VIEW_OBTENER_GRAFICO, headers=headers,params=params)
+
+            if res.status_code == 200:
+                graficos = res.json()
+                print(f"✅¡ Se obtuvo correctamente! Gráficos")
+                #print(textboxes)
+                if graficos:
+                    self.render_graficos(graficos)
+
+        except Exception as ex:
+            print("-- Error en try_load_graficos():",ex)
+    
+    def render_graficos(self,graficos):
+        print("-en render_graficos(graficos)")
+        nombre  =f"Gráfico {self.num_grafico}"
+        print(graficos)
+        for tb in graficos:
+            # Crear frame
+            frame_movil = MovableResizableFrame(
+                self.hojas_frame[f"hoja{1}_frame"],  # o el contenedor principal donde estás añadiendo
+                width=tb["contenedor_ancho"],
+                height=tb["contenedor_alto"],
+            )
+            fig = self.fig_grafico(tb)
+            frame_movil.figure = fig
+            frame_movil.pack_propagate(False)
+            frame_movil.place(x=tb["contenedor_x"], y=tb["contenedor_y"])
+
+            print('frame movil creado..')
+            
+
+            self.propiedades_grafico[tb['contenedor_nombre']] = {
+                'tipo_grafico':tb['tipo_grafico'],
+                'var_x':tb.get('var_x',None),
+                'var_y':tb.get('var_y'),
+            }
+
+            self.frames_movil_graficos[tb['contenedor_nombre']] = frame_movil
+            values = [tb['contenedor_nombre']] + list(self.cbo_editar_grafico.cget("values"))
+            self.cbo_editar_grafico.configure(values=values)
+            self.num_grafico = int(tb['contenedor_nombre'][-2:])+1
+
+            print(f"✅ Obtenido {tb['contenedor_nombre']}")
+        
+        
+
+            self.canvas = FigureCanvasTkAgg(fig, master=frame_movil)
+            self.canvas.draw()
+            self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
+            try:
+                seleccionado = tb.get('contenedor_nombre')
+                hex_color = tb.get('color_relleno')
+                if hasattr(frame_movil, "figure"):
+                    fig = frame_movil.figure
+                    if fig.axes:
+                        ax = fig.axes[0]
+                        fig.patch.set_facecolor(hex_color)
+                        ax.set_facecolor(hex_color)
+                        fig.canvas.draw()
+                        fig.canvas.get_tk_widget().update()
+                        print(f"[INFO] Fondo del gráfico '{seleccionado}' cambiado a {hex_color}")
+                        self.propiedades_grafico[seleccionado]['relleno'] = hex_color
+                        print("Propiedad de Relleno para gráfico")
+                    else:
+                        print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
+                else:
+                    print(f"[ERROR] El frame '{seleccionado}' no tiene atributo 'figure'")
+            except Exception as e:
+                    print(f"[ERROR] No se pudo actualizar fondo del gráfico '{seleccionado}':")
+            try:
+                hex_color = tb.get('color_texto')
+                if hasattr(frame_movil, "figure"):
+                    fig = frame_movil.figure
+                    if fig.axes:
+                        ax = fig.axes[0]
+
+                        # Cambiar colores del título, etiquetas y ejes
+                        ax.title.set_color(hex_color)
+                        ax.xaxis.label.set_color(hex_color)
+                        ax.yaxis.label.set_color(hex_color)
+                        ax.tick_params(axis='x', colors=hex_color)
+                        ax.tick_params(axis='y', colors=hex_color)
+
+                        # Cambiar colores de etiquetas de ticks
+                        for label in ax.get_xticklabels():
+                            label.set_color(hex_color)
+                        for label in ax.get_yticklabels():
+                            label.set_color(hex_color)
+
+                        fig.canvas.draw()
+                        fig.canvas.get_tk_widget().update()
+                        print(f"[INFO] Color del gráfico '{seleccionado}' actualizado a {hex_color}")
+                        self.propiedades_grafico[seleccionado]['color'] = hex_color
+                        print("propieded color par gráfico",self.propiedades_grafico[seleccionado]['color'])
+                    else:
+                        print(f"[ERROR] El gráfico '{seleccionado}' no tiene ejes.")
+                else:
+                    print(f"[ERROR] El frame '{seleccionado}' no tiene figura asociada.")
+            except Exception as e:
+                print(f"[ERROR] No se pudo actualizar color del gráfico '{seleccionado}':", e)
+    
+    def eliminar_grafico_bd(self, nombre_grafico):
+        headers = {
+            "Authorization": f"Token {self.auth_token}",
+            "Content-Type": "application/json"
+        }
+        datos = {
+            "table_name": self.table_name,
+            "contenedor_nombre": nombre_grafico
+        }
+
+        try:
+            res = requests.delete(config.VIEW_ELIMINAR_GRAFICO, json=datos, headers=headers)
+            if res.ok:
+                print(f"✅ ¡{nombre_grafico} eliminado correctamente en la BD!")
+            else:
+                print(f"❌ Error al eliminar {nombre_grafico} en BD: {res.status_code} - {res.text}")
+        except Exception as e:
+            print(f"⚠️ Excepción al eliminar textbox en BD: {e}")
+
+    def enviar_textbox(self):
         for nombre  in self.frames_movil_text_box:
             frame = self.frames_movil_text_box.get(nombre)
             text_box = [ widget  for widget in frame.winfo_children()][0]
@@ -3878,7 +4077,7 @@ class App(ctk.CTk):
             else:
                 print(f"❌ Error al guardar: {res.status_code} - {res.text}")
 
-    def try_load_datos_dashboard(self):
+    def try_load_text_box(self):
         try:
             headers = {
                 "Authorization": f"Token {self.auth_token}"
@@ -3891,13 +4090,13 @@ class App(ctk.CTk):
 
             if res.status_code == 200:
                 textboxes = res.json()
-                print(f"✅¡ Se obtuvo correctamente!")
-                print(textboxes)
+                print(f"✅¡ Se obtuvo correctamente! TextBoxes")
+                #print(textboxes)
                 if textboxes:
                     self.render_textboxes(textboxes)
 
         except Exception as ex:
-            print("-- Error en try_load_datos_dashboard():",ex)
+            print("-- Error en try_load_text_box():",ex)
 
 
 
@@ -3961,4 +4160,93 @@ class App(ctk.CTk):
                 print(f"❌ Error al eliminar {nombre_textbox} en BD: {res.status_code} - {res.text}")
         except Exception as e:
             print(f"⚠️ Excepción al eliminar textbox en BD: {e}")
+
+    def fig_grafico(self,tb):
+
+        var_x = tb.get('var_x',None)
+        var_y = tb.get('var_y')
+        tipo_grafico = tb.get('tipo_grafico')
+        
+        fig, ax = plt.subplots()
+        ax.set_facecolor('none')
+        fig.patch.set_facecolor('none')
+        
+        try:
+            if tipo_grafico == "Barra" and var_x:
+                if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                    messagebox.showerror(
+                    "Error",
+                    f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                    return
+                # Ejemplo: barras de la variable Y agrupadas por X
+                grouped = self.df.groupby(var_x)[var_y].mean()
+                grouped.plot(kind='bar', ax=ax,color='lightgray', edgecolor='black', alpha=0.7)
+                ax.set_title(f"Dist. Media de {var_y}")
+                ax.set_xlabel(str(var_x))
+                ax.set_ylabel(f"Media de {var_y}")
+            elif tipo_grafico == 'Barra' and  (var_x == ""):
+                
+                if  not isinstance(self.df[var_y].dtype, pd.CategoricalDtype) :
+                    messagebox.showerror(
+                    "Error",
+                    f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                    return
+                counts = self.df.groupby(var_y).size()
+                counts.plot(kind='bar', ax=ax, color='lightgray', edgecolor='black', alpha=0.7)
+                ax.set_title(f'Dist. {var_y}')
+            elif tipo_grafico == "Tarta":
+                # Pie con distribución de variable X
+                if not isinstance(self.df[var_y].dtype,pd.CategoricalDtype):
+                    messagebox.showerror(
+                    "Error",
+                    f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                    return
+                counts = self.df[var_y].value_counts()
+                ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
+                ax.set_title("Gráfico de Tarta")
+            elif tipo_grafico == "Linea":
+                ordenado = self.df[[var_x,var_y]]
+                ordenado.sort_values(by=var_x,ascending=True,inplace=True)
+                ax.plot(ordenado[var_x], ordenado[var_y])
+                ax.set_title("Gráfico de Línea")
+                propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
+            elif tipo_grafico == "Dispersión":
+                ax.scatter(self.df[var_x], self.df[var_y])
+                ax.set_title("Gráfico de Dispersión")
+            elif tipo_grafico == "Bigote":
+                ax.boxplot(self.df[var_y].dropna())
+                ax.set_title("Gráfico de Caja (Bigote)")
+                propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
+            elif tipo_grafico == "Bigote por categoría":
+                if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                    messagebox.showerror(
+                    "Error",
+                    f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                    return
+                categories = self.df[var_x].unique()
+                data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
+                ax.boxplot(data, labels=categories)
+                ax.set_title(f"Dist. {var_y} por {var_x}")
+            elif tipo_grafico == 'Histograma':
+                ax.hist(self.df[var_y], bins='auto',color='lightgray', edgecolor='black', alpha=0.7, label=f"Hist {var_y}")
+                ax.set_title(f"Dist. Freq. {var_y}")
+            elif tipo_grafico == 'Densidad':
+                data = self.df[var_y]
+                density = gaussian_kde(data)
+                x = np.linspace(min(data), max(data), data.size)
+                y = density(x)
+                ax.hist(data, bins='auto', density=True, color='lightgray', edgecolor='black', alpha=0.7, label="Hist")
+                ax.plot(x, y, color='red', label="Densidad KDE")
+
+                ax.set_title(f"Dist. Prob. {var_y}")
+                ax.set_xlabel(var_y)
+                ax.set_ylabel("Densidad")
+                ax.legend()
+                ax.grid(True)
+        except Exception as e:
+                messagebox.showerror("Error",f"Error:\n{str(e)}")
+                return
+        print('retornado fig')
+        return fig
+
 
