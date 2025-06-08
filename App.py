@@ -2427,10 +2427,10 @@ class App(ctk.CTk):
             propiedad_grafico = None
             try:
                 if tipo_grafico == "Barra" and var_x:
-                    if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                    if self.df[var_x].dtype != 'object':
                         messagebox.showerror(
                         "Error",
-                        f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                        f"En eje X debe poner una variable de tipo object. Puso {self.df[var_x].dtype}.")
                         return
                     # Ejemplo: barras de la variable Y agrupadas por X
                     grouped = self.df.groupby(var_x)[var_y].mean()
@@ -2441,10 +2441,10 @@ class App(ctk.CTk):
                     propiedad_grafico = {'var_y':var_y,'var_x':var_x,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == 'Barra' and  (var_x == ""):
                     
-                    if  not isinstance(self.df[var_y].dtype, pd.CategoricalDtype) :
+                    if  self.df[var_y].dtype != 'object' :
                         messagebox.showerror(
                         "Error",
-                        f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                        f"En eje Y debe poner una variable de tipo object. Puso {self.df[var_y].dtype}.")
                         return
                     counts = self.df.groupby(var_y).size()
                     counts.plot(kind='bar', ax=ax, color='lightgray', edgecolor='black', alpha=0.7)
@@ -2452,10 +2452,10 @@ class App(ctk.CTk):
                     propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Tarta":
                     # Pie con distribución de variable X
-                    if not isinstance(self.df[var_y].dtype,pd.CategoricalDtype):
+                    if self.df[var_y].dtype != 'object':
                         messagebox.showerror(
                         "Error",
-                        f"En eje Y debe poner una variable de tipo Categorico. Puso {self.df[var_y].dtype}.")
+                        f"En eje Y debe poner una variable de tipo object. Puso {self.df[var_y].dtype}.")
                         return
                     counts = self.df[var_y].value_counts()
                     ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
@@ -2476,10 +2476,10 @@ class App(ctk.CTk):
                     ax.set_title("Gráfico de Caja (Bigote)")
                     propiedad_grafico = {'var_y':var_y,'tipo_grafico':tipo_grafico}
                 elif tipo_grafico == "Bigote por categoría":
-                    if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
+                    if self.df[var_x].dtype!='object':
                         messagebox.showerror(
                         "Error",
-                        f"En eje X debe poner una variable de tipo Categorico. Puso {self.df[var_x].dtype}.")
+                        f"En eje X debe poner una variable de tipo object. Puso {self.df[var_x].dtype}.")
                         return
                     categories = self.df[var_x].unique()
                     data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
@@ -3757,29 +3757,11 @@ class App(ctk.CTk):
         else:
             print(f"❌ Error al guardar: {response.status_code} - {response.text}")
         print("Guardando tabla en bbdd (mysql)")
+        
+        
         self.guardar_en_bbdd()
 
-
-        # Enviar datos de gráficos
-        
-        # headers = {
-        #     "Authorization": f"Token {self.auth_token}",
-        #     "Content-Type": "application/json"
-        # }
-
-        # # Enviar datos
-        # data = {
-        #     "tipo": "barra",
-        #     "datos": {"valores": [10, 20, 30], "etiquetas": ["A", "B", "C"]},
-        #     "posicion": {"x": 100, "y": 200},
-        #     "tamaño": {"width": 400, "height": 300},
-        #     "color": "#FF0000",
-        #     "titulo": "Gráfico del usuario"
-        # }
-
-        # response = requests.post(config.VIEW_GRAFICOS, json=data, headers=headers)
-        # print(response.status_code)
-        # print(response.json())
+        self.enviar_datos_dashboard()
 
 
 
@@ -3822,18 +3804,6 @@ class App(ctk.CTk):
                     self.contador_modelos+=1
 
 
-                # Recibir Datos de Gráficos
-                # headers = {
-                #     "Authorization": f"Token {self.auth_token}",
-                #     "Content-Type": "application/json"
-                # }
-                
-                # response = requests.get(config.VIEW_GRAFICOS, headers=headers)
-
-                # if response.status_code == 200:
-                #     graficos = response.json()
-                #     # for grafico in graficos:
-                #     #     self.crear_frame_desde_datos(grafico)
             else:
                 print("Error al obtener los datos:", response.status_code)
         except Exception as ex:
@@ -3853,7 +3823,7 @@ class App(ctk.CTk):
         #hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
         for nombre in self.frames_movil_graficos:
             frame = self.frames_movil_graficos.get(nombre)
-            cotenedor_pestana = f"hoja{1}_frame"
+            cotenedor_pestana  = self.nombre_padre(frame.master)
             print(f"self.propiedades_grafico[{nombre}]",self.propiedades_grafico[nombre])
             
             fig = frame.figure
@@ -3910,7 +3880,6 @@ class App(ctk.CTk):
             if res.status_code == 200:
                 graficos = res.json()
                 print(f"✅¡ Se obtuvo correctamente! Gráficos")
-                #print(textboxes)
                 if graficos:
                     self.render_graficos(graficos)
 
@@ -3924,7 +3893,7 @@ class App(ctk.CTk):
         for tb in graficos:
             # Crear frame
             frame_movil = MovableResizableFrame(
-                self.hojas_frame[f"hoja{1}_frame"],  # o el contenedor principal donde estás añadiendo
+                self.hojas_frame[tb['contenedor_pestana']],  # o el contenedor principal donde estás añadiendo
                 width=tb["contenedor_ancho"],
                 height=tb["contenedor_alto"],
             )
@@ -4015,7 +3984,7 @@ class App(ctk.CTk):
             "table_name": self.table_name,
             "contenedor_nombre": nombre_grafico
         }
-
+        print(config.VIEW_ELIMINAR_GRAFICO)
         try:
             res = requests.delete(config.VIEW_ELIMINAR_GRAFICO, json=datos, headers=headers)
             if res.ok:
@@ -4028,6 +3997,9 @@ class App(ctk.CTk):
     def enviar_textbox(self):
         for nombre  in self.frames_movil_text_box:
             frame = self.frames_movil_text_box.get(nombre)
+
+            cotenedor_pestana  = self.nombre_padre(frame.master)
+
             text_box = [ widget  for widget in frame.winfo_children()][0]
             f = font.Font(font=text_box._font)
             texto = text_box.get("1.0", "end")
@@ -4041,7 +4013,7 @@ class App(ctk.CTk):
             datos = {
                 'table_name' : self.table_name,
                 "contenedor_nombre":nombre,
-                "contenedor_pestana": f"hoja{1}_frame",
+                "contenedor_pestana": cotenedor_pestana,
                 "contenedor_x": frame.winfo_x(),
                 "contenedor_y": frame.winfo_y(),
                 "contenedor_ancho": frame.winfo_width(),
@@ -4105,7 +4077,7 @@ class App(ctk.CTk):
         for tb in textboxes:
             # Crear frame
             frame_movil = MovableResizableFrame(
-                self.hojas_frame[f"hoja{1}_frame"],  # o el contenedor principal donde estás añadiendo
+                self.hojas_frame[tb['contenedor_pestana']],  # o el contenedor principal donde estás añadiendo
                 width=tb["contenedor_ancho"],
                 height=tb["contenedor_alto"],
                 fg_color=tb["color_frame"],
@@ -4250,3 +4222,16 @@ class App(ctk.CTk):
         return fig
 
 
+    def nombre_padre(self,parent):
+        clave_padre = None
+        for clave, frame_padre in self.hojas_frame.items():
+            if frame_padre == parent:
+                clave_padre = clave
+                break
+
+        if clave_padre:
+            print(f"La clave del padre es: {clave_padre}")
+            return clave
+        else:
+            print("No se encontró el padre en el diccionario.")
+            return "hoja1_frame"

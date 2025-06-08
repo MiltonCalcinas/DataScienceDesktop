@@ -54,7 +54,7 @@ class Login(ctk.CTkToplevel):
                     with open("session.json", "w") as f:
                         json.dump(session_data, f)
 
-                    self.after(100, self.destroy)
+                    #self.after(100, self.destroy)
                 
                 self.destroy()
             else:
@@ -105,7 +105,7 @@ class Login(ctk.CTkToplevel):
 
 
                 messagebox.showinfo("Éxito", "Usuario creado correctamente.")
-                self.after(100, self.destroy)
+                #self.after(100, self.destroy)
                 self.destroy()
             else:
                 print("Error:", res.json())
