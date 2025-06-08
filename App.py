@@ -12,6 +12,7 @@ import requests
 import json
 import config
 import colores
+import re
 import os
 from PIL import Image, ImageTk
 from sklearn.cluster import KMeans
@@ -33,6 +34,7 @@ from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import  confusion_matrix, classification_report,roc_curve, auc, r2_score,mean_squared_error,root_mean_squared_error,mean_absolute_error,accuracy_score,f1_score,roc_auc_score,precision_score
 from scipy.stats import gaussian_kde
 import tkinter.font as tkFont
+from tkinter import font
 import csv
 import colorsys 
 
@@ -112,6 +114,8 @@ class App(ctk.CTk):
         self.result_statistics = []
         self.graph_widgets = {}
         self.table_name_list = []
+        self.ruta_imagenes = []
+        self.tipo_grafico ={}
         self.load_font_system() 
         self.crear_interfaz()
         
@@ -127,6 +131,7 @@ class App(ctk.CTk):
             self.get_table_name_list()
             self.try_load_data_from_mysql()
             self.try_load_contenido()
+            self.try_load_datos_dashboard()
         else:
             print("Abriendo login")
             login = Login(self,self.mode)  # le pasas la ventana padre
@@ -141,6 +146,7 @@ class App(ctk.CTk):
                 self.get_table_name_list()
                 self.try_load_data_from_mysql()
                 self.try_load_contenido()
+                self.try_load_datos_dashboard()
             else:
                 self.create_pop_load_data()
         
@@ -2091,11 +2097,11 @@ class App(ctk.CTk):
         cbo_fondo.pack(padx=5, pady=(5, 10), fill="x")
 
         btn_add_txt= ctk.CTkButton(frame_guardar, 
-                                   text="Guardar",
+                                   text="Guardar Gráficos",
                                    fg_color=self.color.COLOR_RELLENO_WIDGET,
                                    border_color=self.color.COLOR_BORDE_WIDGET,
                                    border_width=1,
-                                   command=self.guardar_hoja_csv)
+                                   command=self.enviar_datos_dashboard)
         btn_add_txt.pack(fill="x",expand=True, padx=5,pady=(0, 10))
         
          # Frame principal (panel)
@@ -2344,7 +2350,7 @@ class App(ctk.CTk):
         hoja = self.dashboard.get().lower().replace(" ", "")
         hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
         
-        frame_movil = MovableResizableFrame(hojas_frame_,600,80)
+        frame_movil = MovableResizableFrame(hojas_frame_,600,80,fg_color="#dddddd")
         self.frames_movil_text_box[f"Cuadro Texto {self.num_cuadro_texto}"] = frame_movil
         values = [f"Cuadro Texto {self.num_cuadro_texto}"] + list(self.cbo_editar_texto.cget("values"))
         self.cbo_editar_texto.configure(values=values)
@@ -2352,7 +2358,7 @@ class App(ctk.CTk):
         frame_movil.place(x=100, y=100)
         frame_movil.pack_propagate(False)
 
-        text_box = ctk.CTkTextbox(frame_movil )
+        text_box = ctk.CTkTextbox(frame_movil,fg_color="#ffffff" )
         text_box.pack(fill="both", expand=True,padx=10, pady=10)
 
     def eliminar_textbox(self):
@@ -2361,6 +2367,7 @@ class App(ctk.CTk):
             frame = self.frames_movil_text_box[name_txt]
             frame.destroy()  # Destruye el frame contenedor (y por ende el textbox)
             del self.frames_movil_text_box[name_txt]  # Elimina la referencia del diccionario
+            self.eliminar_textbox_bd(name_txt)
 
             # Actualiza el combobox para remover el nombre eliminado
             values = list(self.cbo_editar_texto.cget("values"))
@@ -2406,6 +2413,7 @@ class App(ctk.CTk):
                     ax.set_title(f"Dist. Media de {var_y}")
                     ax.set_xlabel(str(var_x))
                     ax.set_ylabel(f"Media de {var_y}")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
                 elif tipo_grafico == 'Barra' and  (var_x == ""):
                     
                     if  not isinstance(self.df[var_y].dtype, pd.CategoricalDtype) :
@@ -2416,6 +2424,7 @@ class App(ctk.CTk):
                     counts = self.df.groupby(var_y).size()
                     counts.plot(kind='bar', ax=ax, color='lightgray', edgecolor='black', alpha=0.7)
                     ax.set_title(f'Dist. {var_y}')
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
                 elif tipo_grafico == "Tarta":
                     # Pie con distribución de variable X
                     if not isinstance(self.df[var_y].dtype,pd.CategoricalDtype):
@@ -2426,17 +2435,21 @@ class App(ctk.CTk):
                     counts = self.df[var_y].value_counts()
                     ax.pie(counts, labels=counts.index, autopct="%1.1f%%")
                     ax.set_title("Gráfico de Tarta")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
                 elif tipo_grafico == "Linea":
                     ordenado = self.df[[var_x,var_y]]
                     ordenado.sort_values(by=var_x,ascending=True,inplace=True)
                     ax.plot(ordenado[var_x], ordenado[var_y])
                     ax.set_title("Gráfico de Línea")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
                 elif tipo_grafico == "Dispersión":
                     ax.scatter(self.df[var_x], self.df[var_y])
                     ax.set_title("Gráfico de Dispersión")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
                 elif tipo_grafico == "Bigote":
                     ax.boxplot(self.df[var_y].dropna())
                     ax.set_title("Gráfico de Caja (Bigote)")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
                 elif tipo_grafico == "Bigote por categoría":
                     if not isinstance(self.df[var_x].dtype, pd.CategoricalDtype):
                         messagebox.showerror(
@@ -2447,9 +2460,11 @@ class App(ctk.CTk):
                     data = [self.df[self.df[var_x] == cat][var_y].dropna() for cat in categories]
                     ax.boxplot(data, labels=categories)
                     ax.set_title(f"Dist. {var_y} por {var_x}")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y,'var_x':var_x}
                 elif tipo_grafico == 'Histograma':
                     ax.hist(self.df[var_y], bins='auto',color='lightgray', edgecolor='black', alpha=0.7, label=f"Hist {var_y}")
                     ax.set_title(f"Dist. Freq. {var_y}")
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
                 elif tipo_grafico == 'Densidad':
                     data = self.df[var_y]
                     density = gaussian_kde(data)
@@ -2463,6 +2478,8 @@ class App(ctk.CTk):
                     ax.set_ylabel("Densidad")
                     ax.legend()
                     ax.grid(True)
+                    self.tipo_grafico[tipo_grafico] = {'var_y':var_y}
+
             except Exception as e:
                 messagebox.showerror("Error",f"Error:\n{str(e)}")
                 return
@@ -2483,7 +2500,7 @@ class App(ctk.CTk):
         self.canvas = FigureCanvasTkAgg(fig, master=frame_movil)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
-
+        
     def eliminar_grafico(self):
         name_grafico = self.cbo_editar_grafico.get()  # Obtiene el nombre del gráfico seleccionado
         if name_grafico in self.frames_movil_graficos:
@@ -2502,6 +2519,7 @@ class App(ctk.CTk):
         ruta = self.buscar_imagen()
         if not ruta:
             return
+        self.ruta_imagenes.append(ruta)
 
         hoja = self.dashboard.get().lower().replace(" ", "")
         hojas_frame_ = self.hojas_frame[f"{hoja}_frame"]
@@ -2509,7 +2527,7 @@ class App(ctk.CTk):
         frame_movil = MovableResizableFrame(hojas_frame_, 300, 300)
         nombre_imagen = f"Imagen {self.num_imagen}"
         self.frames_movil_imagen[nombre_imagen] = frame_movil
-
+        
         values = [nombre_imagen] + list(self.cbo_editar_imagen.cget("values"))
         self.cbo_editar_imagen.configure(values=values)
         self.cbo_editar_imagen.set(nombre_imagen)
@@ -3790,3 +3808,142 @@ class App(ctk.CTk):
                 print("Error al obtener los datos:", response.status_code)
         except Exception as ex:
             print("Errror al intentar cargar los contenidos",ex)
+
+
+    def enviar_datos_dashboard(self):
+        print("--- enviar_datos_dashboard")
+        for nombre  in self.frames_movil_text_box:
+            frame = self.frames_movil_text_box.get(nombre)
+            text_box = [ widget  for widget in frame.winfo_children()][0]
+            f = font.Font(font=text_box._font)
+            texto = text_box.get("1.0", "end")
+            
+            # self.hojas_frame[f"{hoja1}_frame"]
+            
+            text_color = text_box.cget("text_color")
+            if isinstance(text_color,list):
+                text_color = text_color[0]
+
+            datos = {
+                'table_name' : self.table_name,
+                "contenedor_nombre":nombre,
+                "contenedor_pestana": f"hoja{1}_frame",
+                "contenedor_x": frame.winfo_x(),
+                "contenedor_y": frame.winfo_y(),
+                "contenedor_ancho": frame.winfo_width(),
+                "contenedor_alto": frame.winfo_height(),
+                "color_frame": frame.cget("fg_color"),
+                #"borde_redondeado": frame.cget("corner_radius") > 0,
+                'borde_redondeado': frame.cget('corner_radius'),
+                "textbox_contenido": texto,
+                "textbox_negrita": f.actual()["weight"] == "bold",
+                "textbox_tamaño_letra": f.actual()["size"] +10,
+                "textbox_capitalizado": f.actual()['slant']=='italic',
+                "textbox_underline": f.actual()["underline"],
+                "textbox_fuente": f.actual()["family"],
+                "textbox_color":text_color,
+                'textbox_fondo_color':text_box.cget("fg_color"),
+        
+            }
+
+            
+
+            headers = {
+                "Authorization": f"Token {self.auth_token}",  # tu token aquí
+                "Content-Type": "application/json"
+            }
+
+            res = requests.post(
+                config.VIEW_GUARDAR_TEXTBOX,
+                json=datos,
+                headers=headers
+            )
+            if res.ok:
+                print(f"✅ ¡{nombre} guardado correctamente!")
+            else:
+                print(f"❌ Error al guardar: {res.status_code} - {res.text}")
+
+    def try_load_datos_dashboard(self):
+        try:
+            headers = {
+                "Authorization": f"Token {self.auth_token}"
+            }
+            params = {
+                "table_name": self.table_name,
+            }
+
+            res = requests.get(config.VIEW_OBTENER_TEXTBOXES, headers=headers,params=params)
+
+            if res.status_code == 200:
+                textboxes = res.json()
+                print(f"✅¡ Se obtuvo correctamente!")
+                print(textboxes)
+                if textboxes:
+                    self.render_textboxes(textboxes)
+
+        except Exception as ex:
+            print("-- Error en try_load_datos_dashboard():",ex)
+
+
+
+
+    def render_textboxes(self, textboxes):
+        for tb in textboxes:
+            # Crear frame
+            frame_movil = MovableResizableFrame(
+                self.hojas_frame[f"hoja{1}_frame"],  # o el contenedor principal donde estás añadiendo
+                width=tb["contenedor_ancho"],
+                height=tb["contenedor_alto"],
+                fg_color=tb["color_frame"],
+            )
+            frame_movil.pack_propagate(False)
+            frame_movil.place(x=tb["contenedor_x"], y=tb["contenedor_y"])
+
+            # Crear fuente con características
+            font = ctk.CTkFont(family=tb["textbox_fuente"], 
+                               size=tb["textbox_tamaño_letra"], 
+                               weight="bold" if tb["textbox_negrita"] else "normal", 
+                               slant= "italic" if tb["textbox_capitalizado"] else "roman", 
+                               underline= tb["textbox_underline"])
+
+
+            
+            # Crear Textbox (widget Text)
+            text_box = ctk.CTkTextbox(frame_movil,
+                font=font,
+                fg_color=tb["textbox_fondo_color"],
+                text_color=tb["textbox_color"],
+            )
+            #insertar contenido
+            contenido = tb["textbox_contenido"]
+            text_box.insert("1.0", contenido)
+            text_box.pack(fill="both", expand=True,padx=10, pady=10)
+
+            self.frames_movil_text_box[tb['contenedor_nombre']] = frame_movil
+            values = [tb['contenedor_nombre']] + list(self.cbo_editar_texto.cget("values"))
+            self.cbo_editar_texto.configure(values=values)
+            self.num_cuadro_texto = int(tb['contenedor_nombre'][-2:])+1
+
+            print(f"✅ Obtenido {tb['contenedor_nombre']}")
+        
+
+            
+    def eliminar_textbox_bd(self, nombre_textbox):
+        headers = {
+            "Authorization": f"Token {self.auth_token}",
+            "Content-Type": "application/json"
+        }
+        datos = {
+            "table_name": self.table_name,
+            "contenedor_nombre": nombre_textbox
+        }
+
+        try:
+            res = requests.delete(config.VIEW_ELIMINAR_TEXTBOX, json=datos, headers=headers)
+            if res.ok:
+                print(f"✅ ¡{nombre_textbox} eliminado correctamente en la BD!")
+            else:
+                print(f"❌ Error al eliminar {nombre_textbox} en BD: {res.status_code} - {res.text}")
+        except Exception as e:
+            print(f"⚠️ Excepción al eliminar textbox en BD: {e}")
+
