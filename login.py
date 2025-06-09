@@ -127,18 +127,18 @@ class Login(ctk.CTkToplevel):
         lbl_titulo.grid(row=0,column=0,columnspan=3)
         lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
-        label_width = 100
+        label_width = 80
 
-        lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre", width=label_width, anchor="w")
-        lbl_nombre.grid(row=1,column=0,padx=(70,0),pady=(30,20))
+        lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre", width=label_width, anchor="e")
+        lbl_nombre.grid(row=1,column=0,padx=10,pady=(30,20))
         lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(30,20))
         txt_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
-        lbl_password = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="w")
-        lbl_password.grid(row=2,column=0,padx=(70,0),pady=(0,20))
+        lbl_password = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="e")
+        lbl_password.grid(row=2,column=0,padx=10,pady=(0,20))
         lbl_password.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
@@ -146,8 +146,8 @@ class Login(ctk.CTkToplevel):
         txt_password.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
 
-        lbl_password2 = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="w")
-        lbl_password2.grid(row=3,column=0,padx=(70,0),pady=(0,20))
+        lbl_password2 = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="e")
+        lbl_password2.grid(row=3,column=0,padx=10,pady=(0,20))
         lbl_password2.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
         txt_password2 = ctk.CTkEntry(self.frame_incio,show="*")
@@ -213,18 +213,18 @@ class Login(ctk.CTkToplevel):
         lbl_titulo.grid(row=0,column=0,columnspan=3)
         lbl_titulo.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
         
-        label_width = 100
+        label_width = 80
 
-        lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre", width=label_width, anchor="w")
-        lbl_nombre.grid(row=1,column=0,padx=(70,0),pady=(30,20))
+        lbl_nombre = ctk.CTkLabel(self.frame_incio,text="Nombre", width=label_width, anchor="e")
+        lbl_nombre.grid(row=1,column=0,padx=10,pady=(30,20))
         lbl_nombre.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
         txt_nombre = ctk.CTkEntry(self.frame_incio,)
         txt_nombre.grid(row=1,column=1,padx=(0,10),pady=(30,20))
         txt_nombre.configure(text_color=self.colores.COLOR_LETRA_NORMAL)
 
-        lbl_password = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="w")
-        lbl_password.grid(row=2,column=0,padx=(70,0),pady=(0,20))
+        lbl_password = ctk.CTkLabel(self.frame_incio,text="Password", width=label_width, anchor="e")
+        lbl_password.grid(row=2,column=0,padx=10,pady=(0,20))
         lbl_password.configure(text_color=self.colores.COLOR_LETRA_SOBRE_FONDO)
 
         txt_password = ctk.CTkEntry(self.frame_incio,show="*")
