@@ -588,7 +588,7 @@ class App(ctk.CTk):
                 print(f"PCA con columnas {columnas_seleccionadas} y {n_components} componentes")
                 # Llama aquí a tu función de PCA con esos parámetros
                 df_select = self.df[columnas_seleccionadas]
-                pca = PCA(n_components=n_components)
+                pca = PCA(n_components=n_components,random_state=123)
                 componentes = pca.fit_transform(df_select)
 
                 # Guardar cada componente como nueva columna
@@ -1264,13 +1264,15 @@ class App(ctk.CTk):
             return
         
         try:
-            print("--- Mostrando tabla csv")
+            
             self.df = pd.read_csv(self.url_csv,sep=sep,encoding=encoding)
+            print("---saving table name")
+            self.post_table_name(self.table_name)
             self.guardar_en_bbdd()
             print("--- añadiendo tabla_name---")
             self.table_name_list.append(self.table_name)
-            print("---saving table name")
-            self.post_table_name(self.table_name)
+
+            print("--- Mostrando tabla csv")
             self.show_tree_viewport()
         except Exception as ex:
             print("Error al importar CSV",ex)
